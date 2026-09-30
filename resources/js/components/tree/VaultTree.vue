@@ -15,7 +15,7 @@ import DocumentPlus from '@/icons/DocumentPlus.vue';
 import FolderPlus from '@/icons/FolderPlus.vue';
 import PencilSquare from '@/icons/PencilSquare.vue';
 import Spinner from '@/icons/Spinner.vue';
-import UserGroup from '@/icons/UserGroup.vue';
+import { UsersRound } from 'lucide-vue-next';
 import { useLayoutStore } from '@/stores/layout';
 import { useVaultStore } from '@/stores/vault';
 import { useVaultTreeStore } from '@/stores/vaultTree';
@@ -182,7 +182,7 @@ provide('vaultTreeDragAndDrop', {
                 <div class="flex shrink-0 items-center gap-1">
                     <Button variant="ghost" size="icon" class="size-11" aria-label="Collaboration" title="Collaboration"
                         @click="openModal(VaultCollaborationModal, { title: 'Collaboration', top: true, vaultId })">
-                        <UserGroup class="size-4.5" aria-hidden="true" />
+                        <UsersRound class="size-4.5" aria-hidden="true" />
                     </Button>
                     <Spinner
                         v-if="layoutStore.isTreeViewLoading"

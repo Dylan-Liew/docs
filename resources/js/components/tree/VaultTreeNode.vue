@@ -75,6 +75,7 @@ const isExpanded = computed(() => vaultTreeStore.isFolderExpanded(props.nodeId))
 const isSelected = computed(() => vaultTreeStore.getSelectedFileId() === props.nodeId);
 const isLoading = computed(() => vaultTreeStore.isFolderLoading(props.nodeId));
 const canNest = computed(() => !node.value.is_file || node.value.type === 'note');
+const renameLabel = computed(() => node.value.type === 'note' ? 'Rename note' : node.value.is_file ? 'Rename file' : 'Rename folder');
 const hasChildren = computed(() => canNest.value && (vaultTreeStore.isFolderLoaded(node.value.id)
     ? vaultTreeStore.getChildren(node.value.id).length > 0 : node.value.has_children));
 
@@ -200,15 +201,15 @@ function handleClick() {
                         />
                         <MenuItem label="Move to…" :icon="FolderInput" @click="closeMenu(); openModal(MoveModal, { title: 'Move to', node });" />
                         <MenuItem
-                            :label="node.is_file ? 'Rename file' : 'Rename folder'"
+                            :label="renameLabel"
                             :icon="PencilSquare"
                             @click="
                                 closeMenu();
                                 openModal(VaultNodeEditModal, {
-                                    title: node.is_file ? 'Rename file' : 'Rename folder',
+                                    title: renameLabel,
                                     id: node.id,
                                     vaultId: page.props.vault.id,
-                                    isFile: node.is_file,
+                                    type: node.type,
                                     name: node.name,
                                 });
                             "

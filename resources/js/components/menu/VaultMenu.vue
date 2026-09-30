@@ -28,7 +28,7 @@ watch(error, message => {
 
 function rename() {
     openModal(VaultEditModal, {
-        title: 'Rename vault',
+        title: 'Rename',
         id: props.vault.id,
         name: props.vault.name,
         onSuccess: () => emit('changed'),
@@ -57,7 +57,7 @@ function remove() {
         <DropdownMenuContent align="end">
             <DropdownMenuItem @select="rename">
                 <Pencil />
-                Rename vault
+                Rename
             </DropdownMenuItem>
             <DropdownMenuItem
                 :disabled="processing"

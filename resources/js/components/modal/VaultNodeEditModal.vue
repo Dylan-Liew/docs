@@ -17,7 +17,7 @@ import { usePage } from '@inertiajs/vue3';
 const props = defineProps<{
     id: number;
     vaultId: number;
-    isFile: boolean;
+    type: VaultNode['type'];
     name: string;
 }>();
 
@@ -38,7 +38,7 @@ const handleSubmit = () => {
     form.patch(url, {
         onSuccess: (response: { data: VaultNode }) => {
             closeModal();
-            const message = props.isFile ? 'File renamed' : 'Folder renamed';
+            const message = props.type === 'note' ? 'Note renamed' : props.type === 'folder' ? 'Folder renamed' : 'File renamed';
             createToast(message, 'success');
 
             if (isSmallScreen.value) {
@@ -71,7 +71,7 @@ const handleSubmit = () => {
             v-model="form.name"
             name="name"
             type="text"
-            :label="isFile ? 'Document name' : 'Folder name'"
+            :label="type === 'note' ? 'Note name' : type === 'folder' ? 'Folder name' : 'File name'"
             :error="form.errors.name"
             required
             autofocus

@@ -402,7 +402,7 @@ try {
         await page.getByRole('link', { name: /Open Browser check/ }).waitFor();
         checks.push('Create vault and return to a predictable home');
         await page.getByRole('button', { name: 'Actions for Browser check' }).click();
-        await page.getByRole('menuitem', { name: 'Rename vault', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
         await page.getByRole('textbox', { name: 'Vault name' }).fill('Renamed vault');
         await page.getByRole('button', { name: 'Rename', exact: true }).click();
         await page.getByRole('link', { name: 'Open Renamed vault', exact: true }).waitFor();

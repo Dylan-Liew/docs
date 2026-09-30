@@ -220,7 +220,7 @@ useEcho(`User.${userId.value}`, 'VaultListUpdatedEvent', refresh);
                                         <span aria-hidden="true">{{ vault.documents_count }}</span>
                                     </span>
                                     <span aria-hidden="true">·</span>
-                                    <span v-if="vault.is_public" role="img" aria-label="Public to all Docs users" title="Public to all Docs users">
+                                    <span v-if="vault.is_public" role="img" aria-label="Public" title="Public">
                                         <Globe class="size-3" aria-hidden="true" />
                                     </span>
                                     <span

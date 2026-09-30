@@ -115,6 +115,9 @@ Run `node tests/e2e/run.mjs docs:review --sharing` for the public-sharing checks
 phone/desktop screenshots and a real disposable Reverb WebSocket test. This checks
 that a socket kept open after access is revoked receives no further private content.
 Its report is `artifacts/e2e/sharing.json`.
+Access-picker checks cover keyboard selection, checked state, Escape returning
+focus without closing Collaboration, phone overflow, and failed saves restoring
+the previous selection. The picker must use the shared themed menu components.
 Checks include a ZIP export/import round trip and a persisted editor change.
 Auth checks compare browser/MCP user IDs and vault lists, exercise MCP-first
 sign-in and the `me` tool, and verify private/pending access and revocation.

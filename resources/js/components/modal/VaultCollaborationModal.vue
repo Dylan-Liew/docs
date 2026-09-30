@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { destroy, index, store, update } from '@/actions/App/Http/Controllers/VaultCollaborationController';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Input from '@/components/ui/input/Input.vue';
-import { Search } from 'lucide-vue-next';
-import { TabsRoot, TabsList, TabsTrigger, TabsContent } from 'reka-ui';
+import { ChevronDown, Search } from 'lucide-vue-next';
+import { TabsRoot, TabsList, TabsTrigger, TabsContent, type AcceptableValue } from 'reka-ui';
 import { useModalManager } from '@/composables/useModalManager';
 import { useRequest } from '@/composables/useRequest';
 import Trash from '@/icons/Trash.vue';
@@ -24,8 +31,10 @@ const { openModal } = useModalManager();
 const form = useRequest<{ email: string }>({ email: '' });
 const access = useRequest({ is_public: vaultStore.isPublic });
 const accessError = ref('');
-function changeAccess(event: Event) {
-    access.is_public = (event.target as HTMLSelectElement).value === 'public';
+function changeAccess(value: AcceptableValue) {
+    if (value !== 'public' && value !== 'restricted') return;
+    if (access.processing || (value === 'public') === access.is_public) return;
+    access.is_public = value === 'public';
     accessError.value = '';
     access.patch<{ data: { is_public: boolean } }>(update.url({ vault: props.vaultId }), {
         onSuccess: ({ data }) => { vaultStore.isPublic = data.is_public; },
@@ -143,13 +152,22 @@ const deleteCollaborator = (userId: number) => {
 
 <template>
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <label for="vault-access" class="text-sm font-medium">Access</label>
-        <select id="vault-access" :value="access.is_public ? 'public' : 'restricted'"
-            :disabled="access.processing" :aria-busy="access.processing" @change="changeAccess"
-            class="bg-muted/40 focus-visible:ring-ring min-h-11 max-w-full rounded-lg border-0 px-3 text-sm focus-visible:ring-2 disabled:opacity-50">
-            <option value="restricted">Restricted</option>
-            <option value="public">Public · all Docs users</option>
-        </select>
+        <span id="vault-access-label" class="text-sm font-medium">Access</span>
+        <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+                <Button id="vault-access" variant="outline" class="h-11 min-w-36 justify-between px-3"
+                    aria-labelledby="vault-access-label" :disabled="access.processing" :aria-busy="access.processing">
+                    {{ access.is_public ? 'Public' : 'Restricted' }}
+                    <ChevronDown class="text-muted-foreground size-4" aria-hidden="true" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" :side-offset="4" class="w-36">
+                <DropdownMenuRadioGroup :model-value="access.is_public ? 'public' : 'restricted'" @update:model-value="changeAccess">
+                    <DropdownMenuRadioItem value="restricted" :disabled="access.processing">Restricted</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="public" :disabled="access.processing">Public</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
         <p class="text-muted-foreground w-full text-xs">{{ access.is_public ? 'Everyone signed into Docs can read and edit.' : 'Only people added below have access.' }}</p>
         <p v-if="accessError" role="alert" class="text-destructive w-full text-sm">{{ accessError }}</p>
     </div>

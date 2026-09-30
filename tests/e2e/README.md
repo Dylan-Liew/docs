@@ -2,6 +2,15 @@
 
 ## Failure cases to cover before changing the implementation
 
+- Collaboration must be a separate icon beside the vault menu, accessible by
+  touch/keyboard at 320px and desktop widths, with no duplicate dropdown entry.
+- Public means all verified Docs users, never anonymous access. Existing/new
+  vaults remain restricted by default. Browser home, recent notes, deep links,
+  files, search, edits and MCP must agree on access, including newly signed-in
+  users. Returning to restricted must revoke implicit access but preserve explicit
+  collaborators; invalid/non-member changes must fail. Failed saves must retain
+  the previous visibility. Previously connected sockets must not receive future
+  private content after public access is removed. Vault deletion remains owner-only.
 - Every favicon format must follow the resolved app theme on initial load, menu
   changes and reload, even when OS appearance differs. New dark raster paths
   must pass the exact Access/tunnel exceptions and retain alpha transparency.
@@ -102,6 +111,10 @@ to `artifacts/e2e/icon-themes.json`; edge checks are in `artifacts/e2e/icons.jso
 The runner starts a disposable container on a random loopback port with an empty
 SQLite database, fixture files, and synthetic identities. It never mounts production
 data or changes production's trusted keys. It removes only its own container on exit.
+Run `node tests/e2e/run.mjs docs:review --sharing` for the public-sharing checks,
+phone/desktop screenshots and a real disposable Reverb WebSocket test. This checks
+that a socket kept open after access is revoked receives no further private content.
+Its report is `artifacts/e2e/sharing.json`.
 Checks include a ZIP export/import round trip and a persisted editor change.
 Auth checks compare browser/MCP user IDs and vault lists, exercise MCP-first
 sign-in and the `me` tool, and verify private/pending access and revocation.

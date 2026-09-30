@@ -9,7 +9,6 @@ use App\Models\Vault;
 use App\ViewModels\VaultEditorTemplateViewModel;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Support\Collection as SupportCollection;
 
@@ -26,9 +25,7 @@ final class VaultTemplateListUpdatedEvent implements ShouldBroadcastNow
     /** @return array<int, Channel> */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('Vault.' . $this->vault->id),
-        ];
+        return $this->vault->channels();
     }
 
     /** @return array<string, SupportCollection<int, VaultEditorTemplateViewModel>|null> */

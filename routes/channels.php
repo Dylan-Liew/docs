@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('User.{userId}', fn(User $user, int $userId): bool => (int) $user->id === $userId);
 
-Broadcast::channel('Vault.{vaultId}', function (User $user, int $vaultId): bool {
+Broadcast::channel('Vault.{vaultId}.{userId}', function (User $user, int $vaultId, int $userId): bool {
     $vault = Vault::find($vaultId);
 
     if ($vault === null) {
         return false;
     }
 
-    return $user->can('update', $vault);
+    return $user->id === $userId && $user->can('update', $vault);
 });
 
 Broadcast::channel('VaultNode.{nodeId}', function (User $user, int $nodeId): ?array {

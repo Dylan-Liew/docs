@@ -6,6 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateVaultCollaboration;
 use App\Actions\DeleteVaultCollaboration;
+use App\Events\VaultListUpdatedEvent;
+use App\Events\VaultUpdatedEvent;
+use App\Events\VaultCollaborationAccessRevokedEvent;
 use App\Http\Requests\StoreVaultCollaborationRequest;
 use App\Models\User;
 use App\Models\Vault;
@@ -18,6 +21,25 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class VaultCollaborationController
 {
+    public function update(Request $request, Vault $vault, #[CurrentUser] User $user): JsonResponse
+    {
+        abort_unless($user->can('update', $vault), 403);
+        $data = $request->validate(['is_public' => ['required', 'boolean']]);
+        $vault->update($data);
+        if (!$vault->wasChanged('is_public')) {
+            return response()->json(['data' => ['is_public' => $vault->is_public]]);
+        }
+        broadcast(new VaultUpdatedEvent($vault))->toOthers();
+        foreach (User::where('email', '!=', config('docs.agent'))->cursor() as $recipient) {
+            broadcast(new VaultListUpdatedEvent($recipient))->toOthers();
+            if (!$vault->is_public && $recipient->cannot('view', $vault)) {
+                broadcast(new VaultCollaborationAccessRevokedEvent($vault, $recipient));
+            }
+        }
+
+        return response()->json(['data' => ['is_public' => $vault->is_public]]);
+    }
+
     public function index(Request $request, Vault $vault, #[CurrentUser] User $user): JsonResponse
     {
         abort_unless($user->can('view', $vault), 403);

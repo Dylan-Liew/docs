@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function (): void {
     Route::prefix('vaults/{vault}/collaborations')->name('vaults.collaborations.')->group(function (): void {
         Route::get('', [VaultCollaborationController::class, 'index'])->middleware('throttle:60,1')->name('index');
         Route::post('', [VaultCollaborationController::class, 'store'])->name('store');
+        Route::patch('', [VaultCollaborationController::class, 'update'])->name('update');
         Route::delete('{user}', [VaultCollaborationController::class, 'destroy'])->name('destroy');
     });
 

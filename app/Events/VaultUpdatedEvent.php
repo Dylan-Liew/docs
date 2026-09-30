@@ -8,7 +8,6 @@ use App\Models\Vault;
 use App\ViewModels\VaultUpdateViewModel;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 final class VaultUpdatedEvent implements ShouldBroadcastNow
@@ -24,9 +23,7 @@ final class VaultUpdatedEvent implements ShouldBroadcastNow
     /** @return array<int, Channel> */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('Vault.' . $this->vault->id),
-        ];
+        return $this->vault->channels();
     }
 
     /** @return array<string, array<string, mixed>> */

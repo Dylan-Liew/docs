@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Events\VaultListUpdatedEvent;
 use App\Events\VaultUpdatedEvent;
 use App\Models\Vault;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 final readonly class UpdateVault
@@ -30,7 +31,9 @@ final readonly class UpdateVault
             return $vault;
         }
 
-        $collaborators = $vault->collaborators()->get();
+        $collaborators = $vault->is_public
+            ? User::where('email', '!=', config('docs.agent'))->where('id', '!=', $vault->created_by)->get()
+            : $vault->collaborators()->get();
 
         /** @var string $previousName */
         $previousName = $vault->getPrevious()['name'];

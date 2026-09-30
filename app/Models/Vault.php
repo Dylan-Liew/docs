@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,7 @@ use Staudenmeir\EloquentHasManyDeep\HasRelationships;
  * @property-read int $id
  * @property-read string $name
  * @property-read int $created_by
+ * @property-read bool $is_public
  * @property-read CarbonImmutable|null $opened_at
  * @property-read CarbonImmutable $created_at
  * @property-read CarbonImmutable $updated_at
@@ -64,10 +66,24 @@ final class Vault extends Model
             ->using(VaultCollaborator::class);
     }
 
+    /** @return array<int, PrivateChannel> */
+    public function channels(): array
+    {
+        // Re-evaluate recipients for every event. A revoked socket can remain
+        // connected, but its user-specific channel receives no further content.
+        $public = self::whereKey($this->id)->value('is_public');
+        $ids = $public
+            ? User::where('email', '!=', config('docs.agent'))->pluck('id')
+            : $this->collaborators()->wherePivot('accepted', true)->pluck('users.id')->push($this->created_by);
+
+        return $ids->unique()->map(fn ($id) => new PrivateChannel('Vault.' . $this->id . '.' . $id))->values()->all();
+    }
+
     #[Override]
     protected function casts(): array
     {
         return [
+            'is_public' => 'boolean',
             'opened_at' => 'datetime',
         ];
     }

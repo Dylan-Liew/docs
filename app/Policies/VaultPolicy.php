@@ -14,7 +14,7 @@ final readonly class VaultPolicy
      */
     public function view(User $user, Vault $vault): bool
     {
-        return $user->id === $vault->created_by ||
+        return $vault->is_public || $user->id === $vault->created_by ||
             $vault->collaborators()
                 ->wherePivot('user_id', $user->id)
                 ->wherePivot('accepted', true)

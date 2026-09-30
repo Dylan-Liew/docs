@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Events\VaultDeletedEvent;
 use App\Events\VaultListUpdatedEvent;
 use App\Models\Vault;
+use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,10 @@ final readonly class DeleteVault
 {
     public function handle(Vault $vault): void
     {
-        $collaborators = $vault->collaborators()->get();
+        $collaborators = $vault->is_public
+            ? User::where('email', '!=', config('docs.agent'))->where('id', '!=', $vault->created_by)->get()
+            : $vault->collaborators()->get();
+        $deleted = new VaultDeletedEvent($vault);
 
         try {
             DB::beginTransaction();
@@ -44,7 +48,7 @@ final readonly class DeleteVault
             broadcast(new VaultListUpdatedEvent($collaborator))->toOthers();
         }
 
-        broadcast(new VaultDeletedEvent($vault))->toOthers();
+        broadcast($deleted)->toOthers();
     }
 
     /**

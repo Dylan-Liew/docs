@@ -7,12 +7,12 @@ namespace App\Events;
 use App\Models\Vault;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 final class VaultDeletedEvent implements ShouldBroadcastNow
 {
     use InteractsWithSockets;
+    private array $channels;
 
     /**
      * Create a new event instance.
@@ -20,7 +20,7 @@ final class VaultDeletedEvent implements ShouldBroadcastNow
     public function __construct(
         private Vault $vault
     ) {
-        //
+        $this->channels = $vault->channels();
     }
 
     /**
@@ -30,8 +30,6 @@ final class VaultDeletedEvent implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('Vault.' . $this->vault->id),
-        ];
+        return $this->channels;
     }
 }

@@ -11,6 +11,7 @@ final readonly class VaultUpdateViewModel
     public function __construct(
         public string $name,
         public ?int $templates_node_id,
+        public bool $is_public,
     ) {
         //
     }
@@ -20,6 +21,7 @@ final readonly class VaultUpdateViewModel
         return new self(
             $vault->name,
             $vault->templates_node_id,
+            $vault->is_public,
         );
     }
 
@@ -29,6 +31,7 @@ final readonly class VaultUpdateViewModel
         return [
             'name' => $this->name,
             'templates_node_id' => $this->templates_node_id,
+            'is_public' => $this->is_public,
         ];
     }
 }

@@ -18,10 +18,6 @@ final readonly class VaultNodePolicy
         /** @var Vault $vault */
         $vault = $node->vault;
 
-        return $user->id === $vault->created_by ||
-            $vault->collaborators()
-                ->wherePivot('user_id', $user->id)
-                ->wherePivot('accepted', true)
-                ->exists();
+        return $user->can('update', $vault);
     }
 }

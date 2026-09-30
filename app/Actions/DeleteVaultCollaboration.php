@@ -21,7 +21,7 @@ final readonly class DeleteVaultCollaboration
 
         broadcast(new VaultCollaborationDeletedEvent($vault, $user))->toOthers();
 
-        if ($wasAccepted) {
+        if ($wasAccepted && !$vault->is_public) {
             broadcast(new VaultCollaborationAccessRevokedEvent($vault, $user));
         }
     }

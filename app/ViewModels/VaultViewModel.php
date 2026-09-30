@@ -16,6 +16,7 @@ final readonly class VaultViewModel
         public ?int $templates_node_id,
         public VaultUserViewModel $user,
         public SupportCollection $collaborators,
+        public bool $is_public,
     ) {
         //
     }
@@ -28,6 +29,7 @@ final readonly class VaultViewModel
             $vault->templates_node_id,
             VaultUserViewModel::fromModel($vault->user),
             $vault->collaborators()->get()->map(VaultCollaboratorViewModel::fromModel(...)),
+            $vault->is_public,
         );
     }
 }

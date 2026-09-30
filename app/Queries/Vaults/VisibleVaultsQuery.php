@@ -18,6 +18,7 @@ final readonly class VisibleVaultsQuery
         return Vault::query()
             ->where(function (Builder $query) use ($user): void {
                 $query->where('created_by', $user->id)
+                    ->orWhere('is_public', true)
                     ->orWhereHas('collaborators', function (Builder $collaborators) use ($user): void {
                         $collaborators->where('user_id', $user->id)->where('accepted', true);
                     });

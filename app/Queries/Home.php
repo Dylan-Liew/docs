@@ -18,7 +18,7 @@ final readonly class Home
     public function vaults(User $user): Collection
     {
         return ($this->visible)($user)
-            ->select(['id', 'name', 'created_by', 'updated_at'])
+            ->select(['id', 'name', 'created_by', 'updated_at', 'is_public'])
             ->withCount([
                 'collaborators as accepted_collaborators_count' => fn (Builder $query) => $query->where('accepted', true),
                 'nodes as documents_count' => fn (Builder $query) => $query->where('is_file', true),

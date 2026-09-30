@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Menu from '@/components/menu/Menu.vue';
 import MenuItem from '@/components/menu/MenuItem.vue';
+import { Button } from '@/components/ui/button';
 import VaultCollaborationModal from '@/components/modal/VaultCollaborationModal.vue';
 import VaultEditModal from '@/components/modal/VaultEditModal.vue';
 import VaultFilesImportModal from '@/components/modal/VaultFilesImportModal.vue';
@@ -178,14 +179,20 @@ provide('vaultTreeDragAndDrop', {
                     {{ vaultStore.name }}
                 </div>
 
-                <div class="flex items-center">
+                <div class="flex shrink-0 items-center gap-1">
+                    <Button variant="ghost" size="icon" class="size-11" aria-label="Collaboration" title="Collaboration"
+                        @click="openModal(VaultCollaborationModal, { title: 'Collaboration', top: true, vaultId })">
+                        <UserGroup class="size-4.5" aria-hidden="true" />
+                    </Button>
                     <Spinner
                         v-if="layoutStore.isTreeViewLoading"
                         class="h-4 w-4 animate-spin opacity-70"
                     />
                     <Menu v-else type="dropdown">
                         <template #trigger>
-                            <Bars3 class="h-5 w-5" />
+                            <Button variant="ghost" size="icon" class="size-11" aria-label="Vault menu" title="Vault menu">
+                                <Bars3 class="size-4.5" aria-hidden="true" />
+                            </Button>
                         </template>
 
                         <template #default="{ closeMenu }">
@@ -240,18 +247,6 @@ provide('vaultTreeDragAndDrop', {
                                             onSuccess: (data: VaultUpdated) => {
                                                 vaultStore.updateVault(data);
                                             },
-                                        });
-                                    "
-                                />
-                                <MenuItem
-                                    label="Collaboration"
-                                    :icon="UserGroup"
-                                    @click="
-                                        closeMenu();
-                                        openModal(VaultCollaborationModal, {
-                                            title: 'Collaboration',
-                                            top: true,
-                                            vaultId: vaultId,
                                         });
                                     "
                                 />

@@ -11,13 +11,15 @@ import { tree } from './tree.mjs';
 import { navigation } from './navigation.mjs';
 import { markdown } from './markdown.mjs';
 import { icons } from './icons.mjs';
+import { sharing } from './sharing.mjs';
 
 const image = process.argv[2] ?? 'docs:review';
 const baseline = process.argv.includes('--baseline');
+const onlySharing = process.argv.includes('--sharing');
 const iconsOnly = process.argv.includes('--icons-only');
 const dir = new URL('../../artifacts/e2e/', import.meta.url);
 await mkdir(dir, { recursive: true });
-const report = new URL(`${baseline ? 'before' : 'report'}.json`, dir);
+const report = new URL(`${onlySharing ? 'sharing' : baseline ? 'before' : 'report'}.json`, dir);
 const started = new Date().toISOString();
 await writeFile(report, JSON.stringify({ image, started, status: 'running' }, null, 2));
 const docker = (...args) =>
@@ -96,6 +98,9 @@ try {
     const port = listener.address().port;
     await new Promise((resolve) => listener.close(resolve));
     const base = `http://127.0.0.1:${port}`;
+    await new Promise((resolve) => listener.listen(0, '127.0.0.1', resolve));
+    const socketPort = listener.address().port;
+    await new Promise((resolve) => listener.close(resolve));
     container = docker(
         'run',
         '-d',
@@ -118,7 +123,13 @@ try {
         '-e',
         'SCOUT_DRIVER=null',
         '-e',
-        'BROADCAST_CONNECTION=log',
+        `BROADCAST_CONNECTION=${onlySharing ? 'reverb' : 'log'}`,
+        '-e', 'REVERB_APP_ID=fixture',
+        '-e', 'REVERB_APP_KEY=fixture',
+        '-e', 'REVERB_APP_SECRET=fixture-secret',
+        '-e', 'REVERB_HOST=127.0.0.1',
+        '-e', `REVERB_PORT=${socketPort}`,
+        '-e', 'REVERB_SCHEME=http',
         '-e',
         'QUEUE_CONNECTION=sync',
         '-e',
@@ -131,7 +142,7 @@ try {
         'sh',
         image,
         '-c',
-        `php artisan config:clear && php -r 'touch("/tmp/docs.sqlite");' && php artisan migrate --force && php artisan serve --host=127.0.0.1 --port=${port}`
+        `php artisan config:clear && php -r 'touch("/tmp/docs.sqlite");' && php artisan migrate --force && ${onlySharing ? `(php artisan reverb:start --host=127.0.0.1 --port=${socketPort} & php artisan serve --host=127.0.0.1 --port=${port})` : `php artisan serve --host=127.0.0.1 --port=${port}`}`
     );
     for (let i = 0; i < 80; i++) {
         try {
@@ -154,6 +165,9 @@ try {
         })
     );
     browser = await chromium.launch(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {});
+    if (onlySharing) {
+        checks.push(await sharing({ browser, base, jwt, dir, socketPort }));
+    } else {
     if (!baseline && !iconsOnly) checks.push(...await auth({ base, browser, jwt, fixture, bearer }));
     const context = await browser.newContext({
         hasTouch: true,
@@ -697,7 +711,6 @@ try {
         await page.reload();
         await editor.getByText('Browser edit persists.', { exact: true }).waitFor();
         await page.getByRole('button', { name: 'Toggle document tree' }).click();
-        await page.locator('aside').first().locator('div.relative').nth(1).click();
         await page.getByRole('button', { name: 'Collaboration', exact: true }).click();
         const sharing = page.getByRole('dialog', {
             name: 'Collaboration',
@@ -751,7 +764,7 @@ try {
         await sharing.getByText('No people found', { exact: true }).waitFor();
         await slowFinished;
         assert.equal(
-            await sharing.getByRole('option').count(),
+            await sharing.getByRole('listbox', { name: 'People', exact: true }).getByRole('option').count(),
             0,
             'A late lookup cannot replace newer results'
         );
@@ -859,7 +872,6 @@ try {
         }
         await page.goto(sharingUrl);
         await page.getByRole('button', { name: 'Toggle document tree' }).click();
-        await page.locator('aside').first().locator('div.relative').nth(1).click();
         await page.getByRole('button', { name: 'Collaboration', exact: true }).click();
         const memberSharing = page.getByRole('dialog', { name: 'Collaboration', exact: true });
         await memberSharing.getByRole('tab', { name: 'Add collaborator', exact: true }).click();
@@ -1021,6 +1033,7 @@ try {
         checks.push(await tree({ browser, base, jwt, dir }));
         checks.push(await navigation({ browser, base, jwt, dir }));
         checks.push(await markdown({ browser, base, jwt, dir }));
+    }
     }
     }
     assert.deepEqual(errors, [], 'Browser exceptions');

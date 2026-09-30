@@ -6,6 +6,7 @@ export interface Vault {
     templates_node_id: number | null;
     user: VaultUser;
     collaborators: VaultCollaborator[];
+    is_public: boolean;
     created_by: number;
     updated_at: string;
 }
@@ -18,7 +19,7 @@ export interface VaultCollaborator extends VaultUser {
     accepted: boolean;
 }
 
-export type VaultListItem = Pick<Vault, 'id' | 'name' | 'created_by' | 'updated_at'> & {
+export type VaultListItem = Pick<Vault, 'id' | 'name' | 'created_by' | 'updated_at' | 'is_public'> & {
     accepted_collaborators_count: number;
     documents_count: number;
     activity_at: string;

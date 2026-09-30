@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { destroy, index, store } from '@/actions/App/Http/Controllers/VaultCollaborationController';
+import { destroy, index, store, update } from '@/actions/App/Http/Controllers/VaultCollaborationController';
 import { Button } from '@/components/ui/button';
 import Input from '@/components/ui/input/Input.vue';
 import { Search } from 'lucide-vue-next';
@@ -22,6 +22,19 @@ const page = usePage();
 const { openModal } = useModalManager();
 
 const form = useRequest<{ email: string }>({ email: '' });
+const access = useRequest({ is_public: vaultStore.isPublic });
+const accessError = ref('');
+function changeAccess(event: Event) {
+    access.is_public = (event.target as HTMLSelectElement).value === 'public';
+    accessError.value = '';
+    access.patch<{ data: { is_public: boolean } }>(update.url({ vault: props.vaultId }), {
+        onSuccess: ({ data }) => { vaultStore.isPublic = data.is_public; },
+        onFailure: message => { accessError.value = message; },
+        onInvalid: () => { accessError.value = 'Could not update access. Try again.'; },
+        onFinish: () => { access.is_public = vaultStore.isPublic; },
+    });
+}
+watch(() => vaultStore.isPublic, value => { if (!access.processing) access.is_public = value; });
 const activeTab = ref('users');
 const query = ref('');
 const people = ref<VaultUser[]>([]);
@@ -129,6 +142,17 @@ const deleteCollaborator = (userId: number) => {
 </script>
 
 <template>
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <label for="vault-access" class="text-sm font-medium">Access</label>
+        <select id="vault-access" :value="access.is_public ? 'public' : 'restricted'"
+            :disabled="access.processing" :aria-busy="access.processing" @change="changeAccess"
+            class="bg-muted/40 focus-visible:ring-ring min-h-11 max-w-full rounded-lg border-0 px-3 text-sm focus-visible:ring-2 disabled:opacity-50">
+            <option value="restricted">Restricted</option>
+            <option value="public">Public · all Docs users</option>
+        </select>
+        <p class="text-muted-foreground w-full text-xs">{{ access.is_public ? 'Everyone signed into Docs can read and edit.' : 'Only people added below have access.' }}</p>
+        <p v-if="accessError" role="alert" class="text-destructive w-full text-sm">{{ accessError }}</p>
+    </div>
     <TabsRoot v-model="activeTab">
         <TabsList class="bg-muted flex gap-1 rounded-lg p-1" aria-label="Sharing">
             <TabsTrigger

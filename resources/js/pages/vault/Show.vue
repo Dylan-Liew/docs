@@ -40,7 +40,7 @@ import {
 import { VaultUpdated } from '@/types/vault.events';
 import { VaultShowPageProps } from '@/types/vault.pages';
 import { formatElapsedTime, formatExtendedDate } from '@/utils/time';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
 import { storeToRefs } from 'pinia';
 import { onMounted, provide, ref, shallowRef, watch } from 'vue';
@@ -48,6 +48,8 @@ import { onMounted, provide, ref, shallowRef, watch } from 'vue';
 defineOptions({ layout: AuthLayout });
 
 const props = defineProps<VaultShowPageProps>();
+const page = usePage();
+const channel = `Vault.${props.vault.id}.${page.props.app?.user?.id}`;
 
 const layoutStore = useLayoutStore();
 const { isLeftPanelOpen } = storeToRefs(layoutStore);
@@ -59,6 +61,12 @@ const vaultTreeStore = useVaultTreeStore();
 const vaultTemplateStore = useVaultTemplateStore();
 const { openModal } = useModalManager();
 const { createToast } = useToast();
+useEcho<{ data: { vault_id: number } }>(`User.${page.props.app?.user?.id}`, 'VaultCollaborationAccessRevokedEvent', ({ data }) => {
+    if (data.vault_id === props.vault.id) {
+        createToast('Your access to this vault has changed.', 'error');
+        router.visit('/vaults');
+    }
+});
 const { isSmallScreen } = useScreenSize();
 const vaultActions = useVaultActions();
 const vaultTreeActions = useVaultTreeActions();
@@ -138,11 +146,11 @@ watch(isSmallScreen, value => {
     syncPanelsWithScreen(value);
 });
 
-useEcho<{ data: VaultUpdated }>(`Vault.${props.vault.id}`, 'VaultUpdatedEvent', payload => {
+useEcho<{ data: VaultUpdated }>(channel, 'VaultUpdatedEvent', payload => {
     vaultTreeActions.handleVaultUpdated(payload.data);
 });
 
-useEcho(`Vault.${props.vault.id}`, 'VaultDeletedEvent', () => {
+useEcho(channel, 'VaultDeletedEvent', () => {
     router.visit(index.url(), {
         replace: true,
         fresh: true,
@@ -153,14 +161,14 @@ useEcho(`Vault.${props.vault.id}`, 'VaultDeletedEvent', () => {
 });
 
 useEcho<{ data: VaultEditorTemplateFile[] | null }>(
-    `Vault.${props.vault.id}`,
+    channel,
     'VaultTemplateListUpdatedEvent',
     payload => {
         vaultTemplateStore.setTemplates(payload.data);
     }
 );
 
-useEcho<{ data: VaultNode }>(`Vault.${props.vault.id}`, 'VaultNodeCreatedEvent', payload => {
+useEcho<{ data: VaultNode }>(channel, 'VaultNodeCreatedEvent', payload => {
     vaultTreeStore.handleNodeSaved(payload.data);
 
     if (payload.data.is_file) {
@@ -168,7 +176,7 @@ useEcho<{ data: VaultNode }>(`Vault.${props.vault.id}`, 'VaultNodeCreatedEvent',
     }
 });
 
-useEcho<{ data: VaultNode }>(`Vault.${props.vault.id}`, 'VaultNodeUpdatedEvent', payload => {
+useEcho<{ data: VaultNode }>(channel, 'VaultNodeUpdatedEvent', payload => {
     vaultTreeActions.handleNodeUpdated(payload.data);
 
     if (payload.data.is_file) {
@@ -195,7 +203,7 @@ useEcho<{ data: VaultNode }>(`Vault.${props.vault.id}`, 'VaultNodeUpdatedEvent',
 });
 
 useEcho<{ data: VaultOpenedFileData }>(
-    `Vault.${props.vault.id}`,
+    channel,
     'VaultOpenedFileDataUpdatedEvent',
     payload => {
         if (openedFile.value?.file.id !== payload.data.file.id) {
@@ -207,7 +215,7 @@ useEcho<{ data: VaultOpenedFileData }>(
 );
 
 useEcho<{ data: { deleted_ids: number[] } }>(
-    `Vault.${props.vault.id}`,
+    channel,
     'VaultNodeDeletedEvent',
     payload => {
         vaultActions.handleNodesDeleted(payload.data.deleted_ids);
@@ -215,7 +223,7 @@ useEcho<{ data: { deleted_ids: number[] } }>(
 );
 
 useEcho<{ data: VaultCollaborator }>(
-    `Vault.${props.vault.id}`,
+    channel,
     'VaultCollaborationCreatedEvent',
     ({ data }) => {
         vaultStore.addCollaborator(data);
@@ -223,7 +231,7 @@ useEcho<{ data: VaultCollaborator }>(
 );
 
 useEcho<{ data: VaultCollaborator }>(
-    `Vault.${props.vault.id}`,
+    channel,
     'VaultCollaborationAcceptedEvent',
     ({ data }) => {
         vaultStore.updateCollaborator(data);
@@ -231,7 +239,7 @@ useEcho<{ data: VaultCollaborator }>(
 );
 
 useEcho<{ data: { user_id: number } }>(
-    `Vault.${props.vault.id}`,
+    channel,
     'VaultCollaborationDeletedEvent',
     ({ data }) => {
         vaultStore.removeCollaborator(data.user_id);

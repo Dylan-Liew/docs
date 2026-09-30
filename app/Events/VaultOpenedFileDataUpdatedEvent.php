@@ -9,7 +9,6 @@ use App\ViewModels\VaultNodeViewModel;
 use App\ViewModels\VaultOpenedFileDataViewModel;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 final class VaultOpenedFileDataUpdatedEvent implements ShouldBroadcastNow
@@ -25,9 +24,7 @@ final class VaultOpenedFileDataUpdatedEvent implements ShouldBroadcastNow
     /** @return array<int, Channel> */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('Vault.' . $this->file->vault_id),
-        ];
+        return $this->file->vault->channels();
     }
 
     /** @return array<string, mixed> */

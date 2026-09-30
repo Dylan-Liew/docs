@@ -29,7 +29,7 @@ export async function icons({ page }) {
     const links = await page.locator('link[rel="icon"], link[rel="apple-touch-icon"]').evaluateAll(
         (nodes) => nodes.map((node) => node.getAttribute('href'))
     );
-    assert.deepEqual(links, ['/touch.png', '/icon.ico', '/icon.png', '/icon-light.svg', '/icon-dark.svg']);
+    assert.deepEqual(links, ['/touch.png?v=docs14', '/icon.ico?v=docs14', '/icon.png?v=docs14', '/icon-light.svg?v=docs14', '/icon-dark.svg?v=docs14']);
     for (const [path, file] of Object.entries(files)) {
         const response = await page.request.get(new URL(path, page.url()).href);
         assert.equal(response.status(), 200, path);
@@ -42,7 +42,7 @@ export async function icons({ page }) {
             await page.emulateMedia({ colorScheme });
             assert.deepEqual(await page.locator('link[rel="icon"][media]').evaluateAll(
                 (nodes) => nodes.filter((node) => matchMedia(node.media).matches).map((node) => node.getAttribute('href'))
-            ), [`/icon-${colorScheme}.svg`]);
+            ), [`/icon-${colorScheme}.svg?v=docs14`]);
         }
     }
     await page.emulateMedia({ colorScheme: 'light' });

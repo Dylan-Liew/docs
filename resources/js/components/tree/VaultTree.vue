@@ -180,9 +180,9 @@ provide('vaultTreeDragAndDrop', {
                 </div>
 
                 <div class="flex shrink-0 items-center gap-1">
-                    <Button variant="ghost" size="icon" class="size-11" aria-label="Collaboration" title="Collaboration"
+                    <Button variant="ghost" size="icon" aria-label="Collaboration" title="Collaboration"
                         @click="openModal(VaultCollaborationModal, { title: 'Collaboration', top: true, vaultId })">
-                        <UsersRound class="size-4.5" aria-hidden="true" />
+                        <UsersRound class="size-4" aria-hidden="true" />
                     </Button>
                     <Spinner
                         v-if="layoutStore.isTreeViewLoading"

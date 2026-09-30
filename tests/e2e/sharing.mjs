@@ -73,8 +73,8 @@ export async function sharing({ browser, base, jwt, dir, socketPort }) {
             const menu = owner.getByRole('button', { name: 'Vault menu', exact: true });
             await share.waitFor();
             const a = await share.boundingBox(), b = await menu.boundingBox();
-            assert(a.width >= 44 && a.height >= 44 && b.width >= 44);
-            assert(Math.abs(a.y - b.y) < 1 && a.x + a.width <= b.x + 1);
+            assert(a.width >= 36 && a.height >= 36 && b.width >= 44);
+            assert(Math.abs(a.y + a.height / 2 - b.y - b.height / 2) < 1 && a.x + a.width <= b.x + 1);
             await menu.click();
             assert.equal(await owner.getByRole('button', { name: 'Collaboration', exact: true }).count(), 1);
             await menu.click();

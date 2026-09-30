@@ -2,6 +2,11 @@
 
 ## Failure cases to cover before changing the implementation
 
+- Every favicon format must follow the resolved app theme on initial load, menu
+  changes and reload, even when OS appearance differs. New dark raster paths
+  must pass the exact Access/tunnel exceptions and retain alpha transparency.
+  Legacy icon paths and all private routes must keep their existing behavior.
+
 - Renaming icon resources must update source files, Docker copies, HTML links,
   Nginx matching and exact Cloudflare exceptions together. Legacy URLs must retain
   their original bytes; generated JS/CSS hashes are not part of the rename.
@@ -89,6 +94,10 @@ Build a candidate with `docker build -t docs:review .`, then run
 `node tests/e2e/run.mjs docs:review`. Requires Docker, `npm ci`, and Playwright
 Chromium (`npx playwright install chromium`). Screenshots and the report go to
 `artifacts/e2e/` (ignored). To capture the old UI, add `--baseline`.
+
+For icon changes only, run `node tests/e2e/run.mjs docs:review --icons-only`
+and `node tests/e2e/icons.mjs https://docs.x44ylan.com`. Theme checks are saved
+to `artifacts/e2e/icon-themes.json`; edge checks are in `artifacts/e2e/icons.json`.
 
 The runner starts a disposable container on a random loopback port with an empty
 SQLite database, fixture files, and synthetic identities. It never mounts production

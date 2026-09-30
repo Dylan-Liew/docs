@@ -4,8 +4,9 @@ type Theme = 'light' | 'dark';
 
 const theme = ref<Theme>('light');
 const preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-const savedTheme = localStorage.getItem('theme') as Theme | null;
-theme.value = savedTheme ?? (preferredDark ? 'dark' : 'light');
+let savedTheme: string | null = null;
+try { savedTheme = localStorage.getItem('theme'); } catch {}
+theme.value = savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : (preferredDark ? 'dark' : 'light');
 
 watchEffect(() => {
     if (theme.value === 'dark') {
@@ -14,7 +15,11 @@ watchEffect(() => {
         document.documentElement.classList.remove('dark');
     }
 
-    localStorage.setItem('theme', theme.value);
+    const dark = theme.value === 'dark';
+    document.querySelector<HTMLLinkElement>('#favicon')?.setAttribute('href', `/icon-${theme.value}.svg?v=docs15`);
+    document.querySelector<HTMLLinkElement>('#favicon-fallback')?.setAttribute('href', `/icon${dark ? '-dark' : ''}.ico?v=docs15`);
+    document.querySelector<HTMLLinkElement>('#favicon-png')?.setAttribute('href', `/icon${dark ? '-dark' : ''}.png?v=docs15`);
+    try { localStorage.setItem('theme', theme.value); } catch {}
 });
 
 export function useTheme() {

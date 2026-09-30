@@ -25,7 +25,7 @@ COPY --chown=www-data:www-data database /var/www/html/database
 COPY --chown=www-data:www-data routes /var/www/html/routes
 COPY --chown=www-data:www-data resources/views /var/www/html/resources/views
 COPY --chown=www-data:www-data public/assets /var/www/html/public/assets
-COPY --chown=www-data:www-data public/icon.ico public/icon.png public/touch.png public/icon-light.svg public/icon-dark.svg public/apple-touch-icon-precomposed.png /var/www/html/public/
+COPY --chown=www-data:www-data public/icon.ico public/icon-dark.ico public/icon.png public/icon-dark.png public/touch.png public/icon-light.svg public/icon-dark.svg public/apple-touch-icon-precomposed.png /var/www/html/public/
 # Browser discovery and cached pages still use the previous URLs.
 COPY --chown=www-data:www-data public/icon.ico /var/www/html/public/favicon.ico
 COPY --chown=www-data:www-data public/icon.png /var/www/html/public/favicon.png

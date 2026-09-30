@@ -14,6 +14,7 @@ import { icons } from './icons.mjs';
 
 const image = process.argv[2] ?? 'docs:review';
 const baseline = process.argv.includes('--baseline');
+const iconsOnly = process.argv.includes('--icons-only');
 const dir = new URL('../../artifacts/e2e/', import.meta.url);
 await mkdir(dir, { recursive: true });
 const report = new URL(`${baseline ? 'before' : 'report'}.json`, dir);
@@ -152,8 +153,8 @@ try {
             encoding: 'utf8'
         })
     );
-    browser = await chromium.launch();
-    if (!baseline) checks.push(...await auth({ base, browser, jwt, fixture, bearer }));
+    browser = await chromium.launch(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {});
+    if (!baseline && !iconsOnly) checks.push(...await auth({ base, browser, jwt, fixture, bearer }));
     const context = await browser.newContext({
         hasTouch: true,
         extraHTTPHeaders: {
@@ -174,6 +175,7 @@ try {
     checks.push('Home renders and excludes unaccepted/private vaults');
     if (!baseline) await page.waitForFunction(() => document.title === 'Docs');
     if (!baseline) checks.push(...await icons({ page }));
+    if (!iconsOnly) {
     for (const [name, width, height] of [
         ['small-mobile', 320, 740],
         ['mobile', 390, 844],
@@ -1019,6 +1021,7 @@ try {
         checks.push(await tree({ browser, base, jwt, dir }));
         checks.push(await navigation({ browser, base, jwt, dir }));
         checks.push(await markdown({ browser, base, jwt, dir }));
+    }
     }
     assert.deepEqual(errors, [], 'Browser exceptions');
     for (const file of ['failure.png', 'failure.txt', 'export.zip']) {

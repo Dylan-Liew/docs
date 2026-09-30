@@ -4,21 +4,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <meta name="apple-mobile-web-app-title" content="Docs">
-    <link rel="apple-touch-icon" href="/touch.png?v=docs14" sizes="180x180">
-    <link rel="icon" type="image/x-icon" href="/icon.ico?v=docs14" sizes="16x16 32x32 48x48">
-    <link rel="icon" type="image/png" href="/icon.png?v=docs14" sizes="32x32">
-    <link rel="icon" type="image/svg+xml" href="/icon-light.svg?v=docs14" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/svg+xml" href="/icon-dark.svg?v=docs14" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="/touch.png?v=docs15" sizes="180x180">
+    <link id="favicon-fallback" rel="icon" type="image/x-icon" href="/icon.ico?v=docs15" sizes="16x16 32x32 48x48">
+    <link id="favicon-png" rel="icon" type="image/png" href="/icon.png?v=docs15" sizes="32x32">
+    <link id="favicon" rel="icon" type="image/svg+xml" href="/icon-light.svg?v=docs15" sizes="any">
     <script>
     (function () {
-        const theme = localStorage.getItem('theme');
+        let theme;
+        try { theme = localStorage.getItem('theme'); } catch {}
         const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-        if (theme === 'dark' || (!theme && prefersDarkMode)) {
+        const dark = theme === 'dark' || (theme !== 'light' && prefersDarkMode);
+        if (dark) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
+        document.getElementById('favicon').href = `/icon-${dark ? 'dark' : 'light'}.svg?v=docs15`;
+        document.getElementById('favicon-fallback').href = `/icon${dark ? '-dark' : ''}.ico?v=docs15`;
+        document.getElementById('favicon-png').href = `/icon${dark ? '-dark' : ''}.png?v=docs15`;
     })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.ts'])

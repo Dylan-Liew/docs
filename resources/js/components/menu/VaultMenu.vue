@@ -26,7 +26,7 @@ watch(error, message => {
     if (message) createToast(message, 'error');
 });
 
-function edit() {
+function rename() {
     openModal(VaultEditModal, {
         title: 'Rename vault',
         id: props.vault.id,
@@ -55,9 +55,9 @@ function remove() {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem @select="edit">
+            <DropdownMenuItem @select="rename">
                 <Pencil />
-                Rename
+                Rename vault
             </DropdownMenuItem>
             <DropdownMenuItem
                 :disabled="processing"

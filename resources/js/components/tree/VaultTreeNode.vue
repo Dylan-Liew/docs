@@ -200,12 +200,12 @@ function handleClick() {
                         />
                         <MenuItem label="Move to…" :icon="FolderInput" @click="closeMenu(); openModal(MoveModal, { title: 'Move to', node });" />
                         <MenuItem
-                            :label="node.is_file ? 'Edit file' : 'Edit folder'"
+                            :label="node.is_file ? 'Rename file' : 'Rename folder'"
                             :icon="PencilSquare"
                             @click="
                                 closeMenu();
                                 openModal(VaultNodeEditModal, {
-                                    title: node.is_file ? 'Edit file' : 'Edit folder',
+                                    title: node.is_file ? 'Rename file' : 'Rename folder',
                                     id: node.id,
                                     vaultId: page.props.vault.id,
                                     isFile: node.is_file,

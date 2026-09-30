@@ -38,7 +38,7 @@ const handleSubmit = () => {
     form.patch(url, {
         onSuccess: (response: { data: VaultNode }) => {
             closeModal();
-            const message = props.isFile ? 'File updated' : 'Folder updated';
+            const message = props.isFile ? 'File renamed' : 'Folder renamed';
             createToast(message, 'success');
 
             if (isSmallScreen.value) {
@@ -78,7 +78,7 @@ const handleSubmit = () => {
         />
         <div class="flex justify-end gap-2 py-1">
             <Button variant="outline" @click="closeModal">Cancel</Button>
-            <Submit label="Save" :processing="form.processing" />
+            <Submit label="Rename" :processing="form.processing" />
         </div>
     </form>
 </template>

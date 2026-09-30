@@ -236,12 +236,12 @@ provide('vaultTreeDragAndDrop', {
                                     "
                                 />
                                 <MenuItem
-                                    label="Edit vault"
+                                    label="Rename vault"
                                     :icon="PencilSquare"
                                     @click="
                                         closeMenu();
                                         openModal(VaultEditModal, {
-                                            title: 'Edit vault',
+                                            title: 'Rename vault',
                                             id: vaultId,
                                             name: vaultStore.name,
                                             onSuccess: (data: VaultUpdated) => {

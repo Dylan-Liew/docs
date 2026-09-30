@@ -25,7 +25,7 @@ const handleSubmit = () => {
     form.patch(url, {
         onSuccess: (response: { data: VaultUpdated }) => {
             closeModal();
-            createToast('Vault updated', 'success');
+            createToast('Vault renamed', 'success');
             props.onSuccess?.(response.data);
         },
     });
@@ -51,7 +51,7 @@ const handleSubmit = () => {
         />
         <div class="flex justify-end gap-2 py-1">
             <Button variant="outline" @click="closeModal">Cancel</Button>
-            <Submit label="Save" :processing="form.processing" />
+            <Submit label="Rename" :processing="form.processing" />
         </div>
     </form>
 </template>

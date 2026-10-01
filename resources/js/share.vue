@@ -73,7 +73,7 @@ watch(() => selected.value?.name ?? data.value.name, title => { document.title =
                 <p v-if="message" role="alert" class="text-destructive px-4 py-3 text-sm">{{ message }}</p>
                 <p v-if="!selected" class="text-muted-foreground m-auto p-6 text-sm">Choose a note</p>
                 <div v-else class="mx-auto w-full max-w-4xl py-5">
-                    <ShareNote v-if="selected.type === 'note'" :key="selected.id" :node="selected" :base="base" @open="openPath" />
+                    <ShareNote v-if="selected.type === 'note'" :key="selected.id" :node="selected" :base="base" :vault-id="data.vaultId" :nodes="data.nodes ?? []" @open="openPath" @navigate="navigate" />
                     <img v-else-if="selected.type === 'image'" :src="selected.url" :alt="selected.name" class="mx-auto max-w-full px-4" />
                     <video v-else-if="selected.type === 'video'" :src="selected.url" controls class="w-full px-4" />
                     <audio v-else-if="selected.type === 'audio'" :src="selected.url" controls class="w-full px-4" />

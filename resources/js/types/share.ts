@@ -4,6 +4,7 @@ export type ShareNode = Pick<VaultNode, 'id' | 'parent_id' | 'name' | 'type' | '
 export type ShareFile = Pick<VaultNode, 'id' | 'name' | 'type' | 'content' | 'url'>;
 export type ShareData = {
     base?: string;
+    vaultId?: number;
     name?: string;
     nodes?: ShareNode[];
     selected?: ShareFile | null;

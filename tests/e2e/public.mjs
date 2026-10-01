@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
-export async function publicLinks({ browser, base, jwt, dir }) {
+export async function publicLinks({ browser, base, jwt, dir, fixture }) {
     const contexts = [];
     const errors = [];
     const blocked = [];
@@ -28,6 +28,19 @@ export async function publicLinks({ browser, base, jwt, dir }) {
         const owner = await session('alex@example.test');
         const outsider = await session('sam@example.test');
         const guest = await session();
+        const legacy = fixture.legacy;
+        const old = `${base}/share/${legacy.token}`;
+        const short = (await request(owner, `/vaults/${legacy.id}/share`, 'POST')).body.data.share_url;
+        const alias = Buffer.from(legacy.token.slice(0, 32), 'hex').toString('base64url');
+        assert.equal(short, `${base}/share/${alias}`, 'Existing shares get a short URL without rotating their token');
+        const oldData = await (await guest.request.get(old, { headers: { Accept: 'application/json' } })).json();
+        const shortData = await (await guest.request.get(short, { headers: { Accept: 'application/json' } })).json();
+        assert.equal(oldData.name, shortData.name);
+        assert.deepEqual(oldData.nodes, shortData.nodes);
+        const changed = short.slice(0, -1) + (alias.endsWith('A') ? 'Q' : 'A');
+        assert.equal((await guest.request.get(changed, { headers: { Accept: 'application/json' } })).status(), 404);
+        assert.equal((await request(owner, `/vaults/${legacy.id}/share`, 'DELETE')).status, 200);
+        for (const link of [old, short]) assert.equal((await guest.request.get(link, { headers: { Accept: 'application/json' } })).status(), 404);
         guest.on('request', req => { if (!['GET', 'HEAD'].includes(req.method())) writes.push(req.url()); });
         await guest.route('**/*', route => {
             const url = new URL(route.request().url());
@@ -58,6 +71,19 @@ export async function publicLinks({ browser, base, jwt, dir }) {
         const source = `# Public content\n\n[Details](Overview/Details.md)\n\n![Pixel](Media/pixel.png)\n\n- [ ] Read only\n\n\`\`\`html\n<p>Rendered HTML</p><script>window.publicLeak = true</script>\n\`\`\`\n\n\`\`\`archify\n${JSON.stringify(spec)}\n\`\`\`\n`;
         assert.equal((await request(owner, `${path}/nodes/${note.id}`, 'PATCH', { content: source })).status, 200);
         await owner.goto(`${base}${path}`);
+        for (const width of [320, 390, 1440]) {
+            await owner.setViewportSize({ width, height: 900 });
+            const toggle = owner.getByRole('button', { name: 'Toggle document tree', exact: true });
+            if (width < 1024) await toggle.click();
+            const share = owner.getByRole('button', { name: 'Collaboration', exact: true });
+            await share.waitFor({ state: 'visible' });
+            assert.equal(await share.locator('svg.lucide-share-2').count(), 1, 'Use the share icon, not the users icon');
+            assert.equal(await share.locator('svg.lucide-users-round').count(), 0);
+            const box = await share.locator('svg').boundingBox();
+            assert(box.width === 16 && box.height === 16);
+            await owner.screenshot({ path: new URL(`share-icon-${width}.png`, dir).pathname });
+            if (width < 1024) await toggle.click();
+        }
         await owner.getByRole('button', { name: 'Collaboration', exact: true }).click();
         const modal = owner.getByRole('dialog', { name: 'Collaboration', exact: true });
         assert.equal(await modal.getByRole('textbox', { name: 'Public link URL' }).count(), 0);
@@ -72,7 +98,7 @@ export async function publicLinks({ browser, base, jwt, dir }) {
         const input = modal.getByRole('textbox', { name: 'Public link URL' });
         await input.waitFor();
         const url = await input.inputValue();
-        assert.match(url, new RegExp(`^${base}/share/[a-f0-9]{64}$`));
+        assert.match(url, new RegExp(`^${base}/share/[A-Za-z0-9_-]{22}$`));
         assert.equal((await request(owner, endpoint, 'POST')).body.data.share_url, url);
         await owner.context().grantPermissions(['clipboard-read', 'clipboard-write']);
         await modal.getByRole('button', { name: 'Copy public link', exact: true }).click();
@@ -107,6 +133,9 @@ export async function publicLinks({ browser, base, jwt, dir }) {
         assert.equal((await guest.request.get(`${url}/files?path=/../../config/docs.php`, { headers: { Accept: 'application/json' } })).status(), 404);
         const foreign = (await request(outsider, '/vaults', 'POST', { name: 'Private content' })).body.data;
         const foreignNote = (await request(outsider, `/vaults/${foreign.id}/nodes`, 'POST', { name: 'Secret', is_file: true })).body.data;
+        const linkedSource = `${source}\n[Native absolute](${base}${path}?file=${child.id})\n\n[Native relative](${path}?file=${child.id})\n\n[Native fragment](${base}${path}?file=${child.id}#details)\n\n[Another vault](${base}/vaults/${foreign.id}?file=${foreignNote.id})\n\n[External origin](https://example.test${path}?file=${child.id})\n\n[Invalid file](${base}${path}?file=invalid)\n\n[Missing file](${base}${path}?file=99999999)\n`;
+        const savedLinks = await request(owner, `${path}/nodes/${note.id}`, 'PATCH', { content: linkedSource });
+        assert.equal(savedLinks.status, 200);
         assert.equal((await guest.request.get(`${url}?file=${foreignNote.id}`, { headers: { Accept: 'application/json' } })).status(), 404);
         assert.equal((await guest.request.get(`${url}/files?node=${foreignNote.id}`, { headers: { Accept: 'application/json' } })).status(), 404);
         assert.equal((await guest.request.patch(url, { headers: { Accept: 'application/json' }, data: { content: 'Forbidden' } })).status(), 405);
@@ -114,6 +143,38 @@ export async function publicLinks({ browser, base, jwt, dir }) {
         await guest.getByRole('link', { name: 'Overview', exact: true }).click();
         const content = guest.locator('.tiptap');
         await content.getByRole('heading', { name: 'Public content', exact: true }).waitFor();
+        for (const name of ['Native absolute', 'Native relative']) {
+            const link = content.getByRole('link', { name, exact: true });
+            assert.equal(await link.getAttribute('href'), `${url}?file=${child.id}`);
+            assert.equal(await link.getAttribute('target'), '_self');
+        }
+        assert.equal(await content.getByRole('link', { name: 'Native fragment', exact: true }).getAttribute('href'), `${url}?file=${child.id}#details`);
+        for (const [name, href] of [
+            ['Another vault', `${base}/vaults/${foreign.id}?file=${foreignNote.id}`],
+            ['External origin', `https://example.test${path}?file=${child.id}`],
+            ['Invalid file', `${base}${path}?file=invalid`],
+            ['Missing file', `${base}${path}?file=99999999`],
+        ]) assert.equal(await content.getByRole('link', { name, exact: true }).getAttribute('href'), href);
+        const copied = await content.getByRole('link', { name: 'Native absolute', exact: true }).getAttribute('href');
+        const newTab = await guest.context().newPage();
+        await newTab.goto(copied);
+        await newTab.locator('.tiptap').getByText('Nested public note.', { exact: true }).waitFor();
+        await newTab.close();
+        await content.getByRole('link', { name: 'Native absolute', exact: true }).click();
+        await guest.locator('.tiptap').getByText('Nested public note.', { exact: true }).waitFor();
+        assert.equal(guest.url(), `${url}?file=${child.id}`);
+        await guest.goBack();
+        await content.getByRole('heading', { name: 'Public content', exact: true }).waitFor();
+        await guest.goForward();
+        await guest.locator('.tiptap').getByText('Nested public note.', { exact: true }).waitFor();
+        await guest.goBack();
+        await content.getByRole('heading', { name: 'Public content', exact: true }).waitFor();
+        await content.getByRole('link', { name: 'Native relative', exact: true }).click();
+        await guest.locator('.tiptap').getByText('Nested public note.', { exact: true }).waitFor();
+        await guest.goBack();
+        await content.getByRole('heading', { name: 'Public content', exact: true }).waitFor();
+        const unchanged = await guest.request.get(`${url}?file=${note.id}`, { headers: { Accept: 'application/json' } });
+        assert.equal((await unchanged.json()).selected.content, savedLinks.body.data.content, 'Reader mapping must preserve the stored Markdown');
         assert.equal(await content.getAttribute('contenteditable'), 'false');
         assert.equal(await guest.getByRole('button', { name: 'Edit document', exact: true }).count(), 0);
         await guest.waitForFunction(() => !!document.querySelector('.tiptap img')?.complete && document.querySelector('.tiptap img')?.naturalWidth > 0);

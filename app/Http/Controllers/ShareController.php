@@ -88,7 +88,7 @@ final readonly class ShareController
                 'is_file' => $item->is_file,
             ]);
 
-        return $this->page($request, ['base' => $base, 'name' => $vault->name, 'nodes' => $nodes, 'selected' => $selected]);
+        return $this->page($request, ['base' => $base, 'vaultId' => $vault->id, 'name' => $vault->name, 'nodes' => $nodes, 'selected' => $selected]);
     }
 
     public function files(Request $request, string $token): BinaryFileResponse

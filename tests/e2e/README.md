@@ -99,6 +99,13 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Short-link failures to cover: new links must use a 22-character URL-safe random
+key; existing 64-character URLs and their shorter aliases must resolve the same
+vault and revoke together. Invalid/altered keys, cross-vault files and writes
+must remain blocked. Both link formats and assets must pass the tunnel's narrow
+public rule without changing workspace/MCP authentication. The share icon must
+retain its 16px size, themed button, accessible label and mobile/desktop placement.
+
 Public-link failures to verify before implementation: guests must not reach the
 editor, MCP, collaboration endpoints, private vaults, or files outside the shared
 vault. Link creation and revocation must require an existing authorized user,
@@ -109,6 +116,13 @@ include no user/collaborator data, offer no editable fields or saves, preserve
 Markdown/HTML/diagram rendering, and fit 320px through desktop widths. Invalid
 tokens, missing/deleted notes, empty vaults and restricted methods must fail
 cleanly; public navigation must handle back/forward and stale requests.
+
+Native in-note links must resolve into the current share only when their origin,
+vault and file belong to that shared vault. Absolute and root-relative links,
+fragments, normal clicks, copied/new-tab URLs and Back/Forward must work without
+private asset requests. External origins, another vault, malformed or missing
+file IDs must keep their original links. Reader rendering must preserve stored
+Markdown and produce no content writes.
 
 Build a candidate with `docker build -t docs:review .`, then run
 `node tests/e2e/run.mjs docs:review`. Requires Docker, `npm ci`, and Playwright

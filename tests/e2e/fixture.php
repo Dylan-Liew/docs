@@ -18,9 +18,15 @@ $owner = User::create(['name' => 'Alex', 'email' => 'alex@example.test', 'passwo
 $other = User::create(['name' => 'Sam', 'email' => 'sam@example.test', 'password' => bin2hex(random_bytes(32)), 'role' => UserRole::USER]);
 $agent = User::create(['name' => 'Agent', 'email' => 'agent@example.test', 'password' => bin2hex(random_bytes(32)), 'role' => UserRole::USER]);
 $vaults = [];
+$legacy = null;
 foreach (['Product', 'Engineering', 'Research & references', 'A very long vault name for responsive layout checks', 'Shared playbook', 'Private archive'] as $i => $name) {
     $vault = app(CreateVault::class)->handle($i < 4 ? $owner : $other, ['name' => $name], false);
     $vaults[] = $vault->id;
+    if ($i === 0 && ($input['legacy'] ?? false)) {
+        $token = bin2hex(random_bytes(32));
+        $vault->update(['share_token' => $token]);
+        $legacy = ['id' => $vault->id, 'token' => $token];
+    }
     if ($i === 0) {
         $vault->collaborators()->attach($agent, ['accepted' => true]);
     }
@@ -35,4 +41,4 @@ foreach (['Product', 'Engineering', 'Research & references', 'A very long vault 
         $node->update(['updated_at' => now()->subHours($i * 3 + $j)]);
     }
 }
-echo json_encode(['vaults' => $vaults]);
+echo json_encode(['vaults' => $vaults, 'legacy' => $legacy]);

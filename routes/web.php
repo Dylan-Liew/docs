@@ -21,7 +21,7 @@ use App\Http\Controllers\VaultNodeMoveController;
 use App\Http\Controllers\VaultSearchController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('share/{token}')->where(['token' => '[a-f0-9]{64}'])
+Route::prefix('share/{token}')->where(['token' => '(?:[A-Za-z0-9_-]{22}|[a-f0-9]{64})'])
     ->withoutMiddleware([Access::class, HandleInertiaRequests::class])->group(function (): void {
         Route::get('', [ShareController::class, 'show'])->middleware('throttle:120,1');
         Route::get('files', [ShareController::class, 'files'])->middleware('throttle:240,1');

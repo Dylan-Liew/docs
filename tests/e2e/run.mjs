@@ -162,13 +162,13 @@ try {
     docker('cp', 'tests/e2e/fixture.php', `${container}:/tmp/fixture.php`);
     const fixture = JSON.parse(
         execFileSync('docker', ['exec', '-i', container, 'php', '/tmp/fixture.php'], {
-            input: JSON.stringify({ key }),
+            input: JSON.stringify({ key, legacy: onlyPublic }),
             encoding: 'utf8'
         })
     );
     browser = await chromium.launch(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {});
     if (onlyPublic) {
-        checks.push(await publicLinks({ browser, base, jwt, dir }));
+        checks.push(await publicLinks({ browser, base, jwt, dir, fixture }));
     } else if (onlySharing) {
         checks.push(await sharing({ browser, base, jwt, dir, socketPort }));
     } else {

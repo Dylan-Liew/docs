@@ -32,7 +32,8 @@ final readonly class ShareController
     {
         abort_unless($user->can('update', $vault), 403);
         // Conditional update makes repeated/concurrent creation return the same link.
-        Vault::whereKey($vault->id)->whereNull('share_token')->update(['share_token' => bin2hex(random_bytes(32))]);
+        $token = rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
+        Vault::whereKey($vault->id)->whereNull('share_token')->update(['share_token' => $token]);
         $vault->refresh();
         broadcast(new VaultUpdatedEvent($vault))->toOthers();
 
@@ -50,7 +51,7 @@ final readonly class ShareController
 
     public function show(Request $request, string $token): Response|JsonResponse
     {
-        $vault = Vault::where('share_token', $token)->first();
+        $vault = Vault::shared($token)->first();
         if ($vault === null) return $this->page($request, ['error' => 'This link is no longer available.'], 404);
 
         $query = validator($request->query(), [
@@ -93,7 +94,7 @@ final readonly class ShareController
 
     public function files(Request $request, string $token): BinaryFileResponse
     {
-        $vault = Vault::where('share_token', $token)->firstOrFail();
+        $vault = Vault::shared($token)->firstOrFail();
         $query = validator($request->query(), [
             'node' => ['nullable', 'integer', 'min:1'],
             'path' => ['nullable', 'string', 'max:4096'],

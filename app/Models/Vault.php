@@ -7,6 +7,7 @@ namespace App\Models;
 use Carbon\CarbonImmutable;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -39,7 +40,28 @@ final class Vault extends Model
 
     public function shareUrl(): ?string
     {
-        return $this->share_token === null ? null : rtrim(config('app.url'), '/') . '/share/' . $this->share_token;
+        $token = $this->share_token;
+        if ($token === null) return null;
+        // Keep legacy URLs valid while presenting their 128-bit prefix compactly.
+        if (strlen($token) === 64 && ctype_xdigit($token)) {
+            $token = rtrim(strtr(base64_encode(hex2bin(substr($token, 0, 32))), '+/', '-_'), '=');
+        }
+        return rtrim(config('app.url'), '/') . '/share/' . $token;
+    }
+
+    /** @return Builder<self> */
+    public static function shared(string $token): Builder
+    {
+        return static::query()->where(function (Builder $query) use ($token): void {
+            $query->where('share_token', $token);
+            if (strlen($token) !== 22) return;
+            $bytes = base64_decode(strtr($token, '-_', '+/') . '==', true);
+            if ($bytes === false || strlen($bytes) !== 16
+                || rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=') !== $token) return;
+            $query->orWhere(fn (Builder $legacy) => $legacy
+                ->where('share_token', 'like', bin2hex($bytes) . '%')
+                ->whereRaw('length(share_token) = 64'));
+        });
     }
 
     /** @return BelongsTo<User, $this> */

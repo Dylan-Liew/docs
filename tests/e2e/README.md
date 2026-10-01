@@ -99,6 +99,13 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Short-link failures to cover: new links must use a 22-character URL-safe random
+key; existing 64-character URLs and their shorter aliases must resolve the same
+vault and revoke together. Invalid/altered keys, cross-vault files and writes
+must remain blocked. Both link formats and assets must pass the tunnel's narrow
+public rule without changing workspace/MCP authentication. The share icon must
+retain its 16px size, themed button, accessible label and mobile/desktop placement.
+
 Public-link failures to verify before implementation: guests must not reach the
 editor, MCP, collaboration endpoints, private vaults, or files outside the shared
 vault. Link creation and revocation must require an existing authorized user,
@@ -143,7 +150,7 @@ authenticated. In Collaboration, create a Public link to publish a vault
 read-only, or disable it to revoke the URL. Existing vaults are not published.
 If the tunnel validates Access JWTs at the origin, add a separate Docs ingress
 before its protected catch-all, with `originRequest.access.required: false` and
-path `^/share/([a-f0-9]{64}(/files)?|build/assets/[A-Za-z0-9._-]+|icon-(light|dark)\.svg|touch\.png)$`.
+path `^/share/(([A-Za-z0-9_-]{22}|[a-f0-9]{64})(/files)?|build/assets/[A-Za-z0-9._-]+|icon-(light|dark)\.svg|touch\.png)$`.
 For a remotely managed tunnel, update the Cloudflare configuration too: it
 overrides the local YAML. Keep every other ingress and Access policy unchanged.
 Run `node tests/e2e/public.mjs https://docs.x44ylan.com` to verify the deployed

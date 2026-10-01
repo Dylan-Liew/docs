@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
+use App\Services\VaultFiles\Types\Note;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Builder;
@@ -74,6 +75,17 @@ final class Vault extends Model
     public function nodes(): HasMany
     {
         return $this->hasMany(VaultNode::class);
+    }
+
+    public function mainNote(): ?VaultNode
+    {
+        return $this->nodes()
+            ->whereNull('parent_id')
+            ->where('is_file', true)
+            ->whereIn('extension', Note::extensions())
+            ->whereRaw('LOWER(name) = LOWER(?)', [$this->name])
+            ->orderBy('id')
+            ->first();
     }
 
     /** @return HasManyDeep<Model, $this> */

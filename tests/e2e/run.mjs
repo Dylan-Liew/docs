@@ -18,10 +18,11 @@ const image = process.argv[2] ?? 'docs:review';
 const baseline = process.argv.includes('--baseline');
 const onlySharing = process.argv.includes('--sharing');
 const onlyPublic = process.argv.includes('--public');
+const onlyNavigation = process.argv.includes('--navigation');
 const iconsOnly = process.argv.includes('--icons-only');
 const dir = new URL('../../artifacts/e2e/', import.meta.url);
 await mkdir(dir, { recursive: true });
-const report = new URL(`${onlyPublic ? 'public' : onlySharing ? 'sharing' : baseline ? 'before' : 'report'}.json`, dir);
+const report = new URL(`${onlyPublic ? 'public' : onlySharing ? 'sharing' : onlyNavigation ? 'navigation' : baseline ? 'before' : 'report'}.json`, dir);
 const started = new Date().toISOString();
 await writeFile(report, JSON.stringify({ image, started, status: 'running' }, null, 2));
 const docker = (...args) =>
@@ -171,6 +172,8 @@ try {
         checks.push(await publicLinks({ browser, base, jwt, dir, fixture }));
     } else if (onlySharing) {
         checks.push(await sharing({ browser, base, jwt, dir, socketPort }));
+    } else if (onlyNavigation) {
+        checks.push(await navigation({ browser, base, jwt, dir }));
     } else {
     if (!baseline && !iconsOnly) checks.push(...await auth({ base, browser, jwt, fixture, bearer }));
     const context = await browser.newContext({
@@ -556,7 +559,7 @@ try {
         await page.waitForFunction(() => document.title === 'Getting started');
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.getByRole('button', { name: 'Close file', exact: true }).click();
-        await page.getByText('Recent files', { exact: true }).waitFor();
+        await page.getByText('Select a note', { exact: true }).waitFor();
         await page.waitForFunction(() => document.title === 'Product');
         assert.equal(await page.getByRole('textbox', { name: 'Document title' }).count(), 0);
         await page.setViewportSize({ width: 320, height: 900 });

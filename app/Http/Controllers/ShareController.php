@@ -63,7 +63,7 @@ final readonly class ShareController
         $base = '/share/' . $token;
         $node = isset($query['file'])
             ? $vault->nodes()->where('is_file', true)->find($query['file'])
-            : null;
+            : (isset($query['path']) ? null : $vault->mainNote());
         if (isset($query['file']) && $node === null) return $this->page($request, ['error' => 'This note is no longer available.'], 404);
         if (isset($query['path'])) {
             $path = app(ResolveTwoPaths::class)->handle($node ? '/' . $node->fullPath() . '.' . $node->extension : '/', $query['path']);

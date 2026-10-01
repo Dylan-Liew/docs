@@ -110,25 +110,23 @@ export function useVaultActions() {
             return;
         }
 
-        const recentFile = vaultRecentFileStore.recentFiles.find(
-            f => f.id === vaultTreeStore.getSelectedFileId()
-        );
-
-        if (!recentFile) {
-            return;
-        }
-
-        const resolvedPath = resolvePaths(
-            decodeURIComponent(recentFile.full_path),
-            decodeURIComponent(path)
-        );
-        const file = vaultOpenedFileStore.links.find(l => l.full_path === resolvedPath);
+        const file = page.props.openedFile?.file;
 
         if (!file) {
             return;
         }
 
-        openFile(file.id);
+        const resolvedPath = resolvePaths(
+            decodeURIComponent(file.full_path),
+            decodeURIComponent(path)
+        );
+        const destination = vaultOpenedFileStore.links.find(l => l.full_path === resolvedPath);
+
+        if (!destination) {
+            return;
+        }
+
+        openFile(destination.id);
     }
 
     async function closeFile(): Promise<void> {
@@ -139,15 +137,15 @@ export function useVaultActions() {
         const visit = ++navigation;
         if (!await savePage(visit)) return;
         router.cancelAll({ async: false, prefetch: false });
-        layoutStore.isFileLoading = false;
+        layoutStore.isFileLoading = true;
 
-        router.push<VaultShowPageProps>({
-            url: show.url({ vault: vaultStore.id }),
-            props: current => ({ ...current, openedFile: null }),
+        router.visit(show.url({ vault: vaultStore.id }), {
             preserveState: true,
             preserveScroll: true,
-            onSuccess: () => {
-                vaultTreeStore.setSelectedFileId(null);
+            showProgress: false,
+            only: ['openedFile'],
+            onFinish: () => {
+                if (visit === navigation) layoutStore.isFileLoading = false;
             },
         });
     }

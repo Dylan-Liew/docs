@@ -65,6 +65,8 @@ final readonly class VaultController
 
         $file = $request->query('file');
         $path = $request->query('path');
+        abort_unless(($file === null || is_string($file)) && ($path === null || is_string($path)), 404);
+        $node = null;
 
         if (is_string($file)) {
             $file = $vault
@@ -80,10 +82,16 @@ final readonly class VaultController
                 abort_unless($file !== null, 404);
             }
 
+            $node = $file;
+        } elseif ($file === null && $path === null) {
+            $node = $vault->mainNote();
+        }
+
+        if ($node !== null) {
             $data['openedFile'] = fn (): array => [
-                'file' => VaultNodeViewModel::fromModel($file),
-                ...(array) VaultOpenedFileDataViewModel::fromModel($file),
-                ...(array) VaultOpenedFileTreeDataViewModel::fromModel($vault, $file),
+                'file' => VaultNodeViewModel::fromModel($node),
+                ...(array) VaultOpenedFileDataViewModel::fromModel($node),
+                ...(array) VaultOpenedFileTreeDataViewModel::fromModel($vault, $node),
             ];
         }
 

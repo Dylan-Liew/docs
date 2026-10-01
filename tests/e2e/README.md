@@ -99,6 +99,14 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Vault landing failures to cover: opening a vault must select its top-level note
+matching the vault name (case-insensitively), not a nested duplicate, folder,
+attachment or recently edited file. Explicit note links must still win and stay
+vault-scoped. Missing/renamed/deleted main notes and empty vaults must show a simple
+note-selection state without creating content or showing Recent files. Verify
+mobile/desktop, public read-only links, refresh and Back/Forward, save-before-return,
+and persistent SPA shell. Removing the recent-files UI must not break note links.
+
 Mobile sharing failures to cover: the URL must use the full row at 320/390px,
 avoid horizontal overflow and Safari input zoom, and keep actions at least 44px
 tall. Copy/open must remain distinct from labelled link removal. Confirmation
@@ -156,6 +164,9 @@ Run `node tests/e2e/run.mjs docs:review --public` for the anonymous public-reade
 checks. Private asset paths are deliberately blocked in the browser to emulate
 Cloudflare Access; the report is `artifacts/e2e/public.json` and screenshots use
 the `public-` prefix.
+Run `node tests/e2e/run.mjs docs:review --navigation` for main-note landing and
+SPA navigation. Its report is `artifacts/e2e/navigation.json`; landing screenshots
+use the `vault-main-` prefix.
 Anonymous links require a separate Cloudflare Access application for
 `docs.x44ylan.com/share/*` with Bypass → Everyone; keep the main application
 authenticated. In Collaboration, create a Public link to publish a vault

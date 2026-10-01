@@ -23,6 +23,39 @@ export async function navigation({ browser, base, jwt, dir }) {
         const c = await create('Charlie');
         await request(`${path}/nodes/${b.id}`, 'PATCH', { content: 'Bravo original' });
         await request(`${path}/nodes/${c.id}`, 'PATCH', { content: 'Charlie original' });
+        // Landing is the vault's own root note, never an arbitrary recent file.
+        await create('Navigation', parent.id);
+        const main = await create('navigation');
+        await request(`${path}/nodes/${main.id}`, 'PATCH', { content: '# Vault overview\n\n[Bravo](Bravo.md)' });
+        for (let i = 0; i < 11; i++) await create(`Later ${i}`);
+        for (const width of [320, 390, 1440]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto(`${base}${path}`);
+            await page.locator('.tiptap').getByRole('heading', { name: 'Vault overview', exact: true }).waitFor();
+            assert.equal(await page.getByRole('textbox', { name: 'Document title', exact: true }).inputValue(), 'navigation');
+            assert.equal(await page.getByText('Recent files', { exact: true }).count(), 0);
+            assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await page.screenshot({ path: new URL(`vault-main-${width}.png`, dir).pathname, animations: 'disabled' });
+        }
+        await page.reload();
+        await page.locator('.tiptap').getByRole('heading', { name: 'Vault overview', exact: true }).waitFor();
+        await page.locator('.tiptap a').filter({ hasText: /^Bravo$/ }).click();
+        await page.waitForFunction(() => document.querySelector('[aria-label="Document title"]')?.value === 'Bravo');
+        assert.equal((await fetch(`${base}${path}`, { headers: { Accept: 'application/json' } })).status, 403);
+        const share = (await request(`${path}/share`, 'POST')).data.share_url;
+        assert.equal((await (await fetch(share, { headers: { Accept: 'application/json' } })).json()).selected.id, main.id, 'Public vaults open the same main note read-only');
+        assert.equal((await (await fetch(`${share}?file=${b.id}`, { headers: { Accept: 'application/json' } })).json()).selected.id, b.id);
+        const empty = (await request('/vaults', 'POST', { name: 'Empty' })).data;
+        const emptyPath = `/vaults/${empty.id}`;
+        await page.goto(`${base}${emptyPath}`);
+        await page.getByText('Select a note', { exact: true }).waitFor();
+        assert.equal((await request(`${emptyPath}/nodes`, 'GET')).children.length, 0, 'Opening a vault must not create content');
+        assert.equal((await page.request.get(`${base}${emptyPath}?file=${main.id}`)).status(), 404, 'Explicit note links remain vault-scoped');
+        await request(`${path}/nodes/${main.id}`, 'PATCH', { name: 'Renamed overview' });
+        await page.goto(`${base}${path}`);
+        await page.getByText('Select a note', { exact: true }).waitFor();
+        assert.equal(await page.getByText('Recent files', { exact: true }).count(), 0);
+        await request(`${path}/nodes/${main.id}`, 'PATCH', { name: 'navigation' });
         await page.goto(`${base}${path}?file=${a.id}`);
         await page.locator('.tiptap').waitFor();
         const title = page.getByRole('textbox', { name: 'Document title', exact: true });
@@ -101,11 +134,15 @@ export async function navigation({ browser, base, jwt, dir }) {
         await ready('Charlie', 'Charlie original');
         await page.unroute(`**${path}?file=${a.id}`);
         const beforeClose = visits.length;
+        await editor.fill('Charlie draft saved on return');
+        await page.evaluate(() => { window.mainReturnProbe = { header: document.querySelector('#app-header'), aside: document.querySelector('aside') }; });
         await page.getByTitle('Close file', { exact: true }).click();
-        await page.getByText('Recent files', { exact: true }).waitFor();
-        assert.equal(visits.length, beforeClose, 'Closing a document needs no request');
+        await ready('navigation', 'Vault overview');
+        assert.equal(visits.length, beforeClose + 1, 'Returning to the vault fetches only its main note');
+        assert.equal(visits.at(-1).headers()['x-inertia-partial-data'], 'openedFile');
+        assert(await page.evaluate(() => window.mainReturnProbe.header === document.querySelector('#app-header') && window.mainReturnProbe.aside === document.querySelector('aside')));
         await page.goBack();
-        await ready('Charlie', 'Charlie original');
+        await ready('Charlie', 'Charlie draft saved on return');
 
         // Leaf notes stay openable and accept children, but have no empty expander.
         const arrow = name => page.getByRole('button', { name: new RegExp(`^(Expand|Collapse) ${name}$`) });
@@ -129,11 +166,11 @@ export async function navigation({ browser, base, jwt, dir }) {
         await page.getByRole('button', { name: 'Actions for Temporary', exact: true }).click();
         await page.getByRole('button', { name: 'Delete', exact: true }).click();
         await page.getByRole('dialog', { name: 'Delete file', exact: true }).getByRole('button', { name: 'Delete', exact: true }).click();
-        await page.getByText('Recent files', { exact: true }).waitFor();
+        await ready('navigation', 'Vault overview');
         assert.equal(await arrow('Bravo').count(), 0, 'Deleting the last child hides its parent arrow');
         assert.equal(await page.locator('aside').getByText('No sub-notes', { exact: true }).count(), 0, 'Empty branches do not leave placeholder rows');
         await open('Charlie');
-        await ready('Charlie', 'Charlie original');
+        await ready('Charlie', 'Charlie draft saved on return');
 
         // Branch arrows still expand by keyboard and touch.
         const collapse = page.getByRole('button', { name: 'Collapse Project', exact: true });
@@ -154,8 +191,13 @@ export async function navigation({ browser, base, jwt, dir }) {
         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         assert.equal(await page.evaluate(() => window.navigationProbe.overlay), false);
         assert.equal(await page.evaluate(() => performance.getEntriesByType('navigation').length), 1);
+        await request(`${path}/nodes/${main.id}`, 'DELETE');
+        await page.goto(`${base}${path}`);
+        await page.getByText('Select a note', { exact: true }).waitFor();
+        assert.equal(await page.getByText('Recent files', { exact: true }).count(), 0);
+        assert.equal((await (await fetch(share, { headers: { Accept: 'application/json' } })).json()).selected, null);
         assert.deepEqual(errors, []);
-        return 'Vault SPA navigation: persistent shell, partial requests, save-before-switch, failure/retry, isolated undo, latest-click wins, local history/close; branch-only arrows update on create/move/delete and support keyboard/touch';
+        return 'Vault main note opens at 320/390/1440px and in public links; explicit links, missing/renamed/deleted main notes and empty vaults are safe. SPA shell, save-before-return/switch, failure/retry, note links beyond recents, isolated undo, latest-click wins, history and branch-only arrows work';
     } catch (error) {
         await page.screenshot({ path: new URL('navigation-failure.png', dir).pathname }).catch(() => {});
         throw error;

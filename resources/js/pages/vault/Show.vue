@@ -4,14 +4,13 @@ import UserMenu from '@/components/menu/UserMenu.vue';
 import VaultNodeCreateModal from '@/components/modal/VaultNodeCreateModal.vue';
 import VaultSearchModal from '@/components/modal/VaultSearchModal.vue';
 import VaultTree from '@/components/tree/VaultTree.vue';
+import { Button } from '@/components/ui/button';
 import VaultFile from '@/components/vault/VaultFile.vue';
 import VaultFileAudio from '@/components/vault/VaultFileAudio.vue';
-import VaultFileIcon from '@/components/vault/VaultFileIcon.vue';
 import VaultFileImage from '@/components/vault/VaultFileImage.vue';
 import VaultFileNote from '@/components/vault/VaultFileNote.vue';
 import VaultFilePdf from '@/components/vault/VaultFilePdf.vue';
 import VaultFileVideo from '@/components/vault/VaultFileVideo.vue';
-import VaultToggleContentWidthButton from '@/components/vault/VaultToggleContentWidthButton.vue';
 import { useContentWidthPreference } from '@/composables/useContentWidthPreference';
 import { useEditor } from '@/composables/useEditor';
 import { useModalManager } from '@/composables/useModalManager';
@@ -39,7 +38,6 @@ import {
 } from '@/types/vault';
 import { VaultUpdated } from '@/types/vault.events';
 import { VaultShowPageProps } from '@/types/vault.pages';
-import { formatElapsedTime, formatExtendedDate } from '@/utils/time';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
 import { storeToRefs } from 'pinia';
@@ -341,63 +339,17 @@ useEcho<{ data: { user_id: number } }>(
                     @content-updated="router.replaceProp('openedFile.file.content', $event)"
                 />
             </VaultFile>
-            <div v-else class="flex h-full w-full flex-col">
-                <div class="flex items-center justify-between gap-2 p-4">
-                    <div class="text-lg font-semibold">Recent files</div>
-                    <div class="flex items-center gap-2">
-                        <VaultToggleContentWidthButton />
-
-                        <button
-                            type="button"
-                            title="New note"
-                            @click="
-                                openModal(VaultNodeCreateModal, {
-                                    title: 'New note',
-                                    vaultId: props.vault.id,
-                                    parentId: null,
-                                    isFile: true,
-                                })
-                            "
-                        >
-                            <Plus class="h-5 w-5" />
-                        </button>
-                    </div>
-                </div>
-                <div class="-mt-2 flex w-full flex-grow flex-col overflow-y-auto px-4">
-                    <template v-for="file in vaultRecentFileStore.recentFiles" :key="file.id">
-                        <button
-                            class="border-border hover:text-foreground flex w-full flex-col gap-2 border-b pt-2 pb-4 text-start last:border-b-0"
-                            type="button"
-                            @click="vaultActions.openFile(file.id)"
-                        >
-                            <span class="flex w-full items-center justify-between">
-                                <span
-                                    class="flex min-w-0 flex-1 items-center gap-2 py-1"
-                                    :title="file.name"
-                                >
-                                    <span class="flex shrink-0 items-center justify-center gap-2">
-                                        <VaultFileIcon :file="file" />
-                                    </span>
-                                    <span class="truncate">
-                                        {{ file.name }}
-                                    </span>
-                                </span>
-                                <span
-                                    class="text-muted-foreground pl-2 text-xs"
-                                    :title="formatExtendedDate(file.updated_at)"
-                                >
-                                    {{ formatElapsedTime(file.updated_at) }}
-                                </span>
-                            </span>
-                            <span
-                                class="text-muted-foreground truncate text-xs"
-                                :title="file.full_path"
-                            >
-                                {{ file.full_path }}
-                            </span>
-                        </button>
-                    </template>
-                </div>
+            <div v-else class="flex h-full w-full flex-col items-center justify-center gap-4 p-6">
+                <p class="text-muted-foreground text-sm">Select a note</p>
+                <Button variant="outline" class="h-11" @click="openModal(VaultNodeCreateModal, {
+                    title: 'New note',
+                    vaultId: props.vault.id,
+                    parentId: null,
+                    isFile: true,
+                })">
+                    <Plus class="size-3.5" aria-hidden="true" />
+                    New note
+                </Button>
             </div>
         </div>
     </section>

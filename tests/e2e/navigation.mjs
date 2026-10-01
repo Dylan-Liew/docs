@@ -45,6 +45,46 @@ export async function navigation({ browser, base, jwt, dir }) {
         const share = (await request(`${path}/share`, 'POST')).data.share_url;
         assert.equal((await (await fetch(share, { headers: { Accept: 'application/json' } })).json()).selected.id, main.id, 'Public vaults open the same main note read-only');
         assert.equal((await (await fetch(`${share}?file=${b.id}`, { headers: { Accept: 'application/json' } })).json()).selected.id, b.id);
+        // Index fallback failures: nested index selected, name-note priority lost,
+        // explicit links overridden, editing exposed publicly, stale rename/delete.
+        const indexed = (await request('/vaults', 'POST', { name: 'Indexed library' })).data;
+        const indexedPath = `/vaults/${indexed.id}`;
+        const indexNode = async (name, parent_id = null) => (await request(`${indexedPath}/nodes`, 'POST', { name, parent_id, is_file: true })).data;
+        const branch = await indexNode('Branch');
+        await indexNode('index', branch.id);
+        await page.goto(`${base}${indexedPath}`);
+        await page.getByText('Select a note', { exact: true }).waitFor();
+        const index = await indexNode('INDEX');
+        await request(`${indexedPath}/nodes/${index.id}`, 'PATCH', { content: '# Library index\n\n[Branch](Branch.md)' });
+        const named = await indexNode('Indexed library');
+        await request(`${indexedPath}/nodes/${named.id}`, 'PATCH', { content: '# Named overview' });
+        await page.goto(`${base}${indexedPath}`);
+        await page.locator('.tiptap').getByRole('heading', { name: 'Named overview', exact: true }).waitFor();
+        await request(`${indexedPath}/nodes/${named.id}`, 'DELETE');
+        const indexShare = (await request(`${indexedPath}/share`, 'POST')).data.share_url;
+        const anonymous = await browser.newContext();
+        try {
+            const reader = await anonymous.newPage();
+            for (const width of [390, 1440]) {
+                await page.setViewportSize({ width, height: 900 });
+                await page.goto(`${base}${indexedPath}`);
+                await page.locator('.tiptap').getByRole('heading', { name: 'Library index', exact: true }).waitFor();
+                await reader.setViewportSize({ width, height: 900 });
+                await reader.goto(indexShare);
+                await reader.locator('.tiptap').getByRole('heading', { name: 'Library index', exact: true }).waitFor();
+                assert.equal(await reader.locator('.tiptap').getAttribute('contenteditable'), 'false');
+                assert(await reader.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            }
+            await reader.reload();
+            await reader.locator('.tiptap').getByRole('heading', { name: 'Library index', exact: true }).waitFor();
+            assert.equal((await (await fetch(`${indexShare}?file=${branch.id}`, { headers: { Accept: 'application/json' } })).json()).selected.id, branch.id);
+            await request(`${indexedPath}/nodes/${index.id}`, 'PATCH', { name: 'Renamed index' });
+            assert.equal((await (await fetch(indexShare, { headers: { Accept: 'application/json' } })).json()).selected, null);
+            await request(`${indexedPath}/nodes/${index.id}`, 'DELETE');
+            assert.equal((await (await fetch(indexShare, { headers: { Accept: 'application/json' } })).json()).selected, null);
+        } finally {
+            await anonymous.close();
+        }
         const empty = (await request('/vaults', 'POST', { name: 'Empty' })).data;
         const emptyPath = `/vaults/${empty.id}`;
         await page.goto(`${base}${emptyPath}`);
@@ -197,7 +237,7 @@ export async function navigation({ browser, base, jwt, dir }) {
         assert.equal(await page.getByText('Recent files', { exact: true }).count(), 0);
         assert.equal((await (await fetch(share, { headers: { Accept: 'application/json' } })).json()).selected, null);
         assert.deepEqual(errors, []);
-        return 'Vault main note opens at 320/390/1440px and in public links; explicit links, missing/renamed/deleted main notes and empty vaults are safe. SPA shell, save-before-return/switch, failure/retry, note links beyond recents, isolated undo, latest-click wins, history and branch-only arrows work';
+        return 'Vault main note opens at 320/390/1440px and in public links; root index fallback opens anonymously at 390/1440px, keeps named-note priority and explicit links, excludes nested indexes and handles rename/delete. Missing main notes and empty vaults are safe. SPA shell, save-before-return/switch, failure/retry, note links beyond recents, isolated undo, latest-click wins, history and branch-only arrows work';
     } catch (error) {
         await page.screenshot({ path: new URL('navigation-failure.png', dir).pathname }).catch(() => {});
         throw error;

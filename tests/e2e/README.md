@@ -101,8 +101,10 @@ existing code blocks; the sidebar's original menus are retained.
 
 Vault landing failures to cover: opening a vault must select its top-level note
 matching the vault name (case-insensitively), not a nested duplicate, folder,
-attachment or recently edited file. Explicit note links must still win and stay
-vault-scoped. Missing/renamed/deleted main notes and empty vaults must show a simple
+attachment or recently edited file. Without a matching note, use a top-level
+`index.md` note (case-insensitively); a matching vault-name note takes priority.
+Nested indexes must not become landing notes. Explicit note links must still win
+and stay vault-scoped. Missing/renamed/deleted landing notes and empty vaults must show a simple
 note-selection state without creating content or showing Recent files. Verify
 mobile/desktop, public read-only links, refresh and Back/Forward, save-before-return,
 and persistent SPA shell. Removing the recent-files UI must not break note links.

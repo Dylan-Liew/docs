@@ -83,7 +83,10 @@ final class Vault extends Model
             ->whereNull('parent_id')
             ->where('is_file', true)
             ->whereIn('extension', Note::extensions())
-            ->whereRaw('LOWER(name) = LOWER(?)', [$this->name])
+            ->where(fn (Builder $query) => $query
+                ->whereRaw('LOWER(name) = LOWER(?)', [$this->name])
+                ->orWhereRaw('LOWER(name) = ?', ['index']))
+            ->orderByRaw('CASE WHEN LOWER(name) = LOWER(?) THEN 0 ELSE 1 END', [$this->name])
             ->orderBy('id')
             ->first();
     }

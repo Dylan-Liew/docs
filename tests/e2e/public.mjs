@@ -110,9 +110,51 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
         await owner.reload();
         await owner.getByRole('button', { name: 'Collaboration', exact: true }).click();
         assert.equal(await input.inputValue(), url);
+        for (const [width, theme] of [[320, 'dark'], [390, 'light'], [1440, 'dark']]) {
+            await owner.setViewportSize({ width, height: 844 });
+            await owner.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
+            const section = modal.getByRole('region', { name: 'Public link', exact: true });
+            await owner.screenshot({ path: new URL(`public-link-modal-${width}.png`, dir).pathname, animations: 'disabled' });
+            assert(await modal.evaluate(el => { const box = el.getBoundingClientRect(); return box.left >= 0 && box.right <= innerWidth && el.scrollWidth <= el.clientWidth; }));
+            const field = await input.boundingBox();
+            const copy = modal.getByRole('button', { name: /^(Copy public link|Link copied)$/ });
+            const open = modal.getByRole('link', { name: 'Open public link', exact: true });
+            for (const control of [input, copy, open, modal.getByRole('button', { name: 'Remove link', exact: true })]) {
+                const height = (await control.boundingBox()).height;
+                assert(height >= 44, `${await control.getAttribute('aria-label') ?? await control.innerText()} must be touch-sized, got ${height}px`);
+            }
+            if (width < 640) {
+                assert(field.width >= (await section.boundingBox()).width - 30, 'Give the URL its own full-width row');
+                assert((await copy.boundingBox()).y >= field.y + field.height);
+                assert((await open.boundingBox()).y >= field.y + field.height);
+                assert.equal(await input.evaluate(el => getComputedStyle(el).fontSize), '16px', 'Avoid Safari focus zoom');
+            }
+        }
         await owner.setViewportSize({ width: 320, height: 844 });
-        assert(await modal.evaluate(el => el.getBoundingClientRect().right <= innerWidth));
-        await owner.screenshot({ path: new URL('public-link-modal.png', dir).pathname });
+        await modal.getByRole('button', { name: 'Remove link', exact: true }).click();
+        const confirm = owner.getByRole('dialog', { name: 'Remove public link', exact: true });
+        await confirm.waitFor();
+        await owner.screenshot({ path: new URL('public-link-confirm.png', dir).pathname, animations: 'disabled' });
+        await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await confirm.waitFor({ state: 'hidden' });
+        assert.equal(await input.inputValue(), url);
+        assert.equal((await guest.request.get(url)).status(), 200);
+        await modal.getByRole('button', { name: 'Remove link', exact: true }).click();
+        await confirm.waitFor();
+        await owner.keyboard.press('Escape');
+        await confirm.waitFor({ state: 'hidden' });
+        assert(await modal.isVisible());
+        await owner.route(`**${endpoint}`, route => route.request().method() === 'DELETE' ? route.fulfill({ status: 500, json: { message: 'Unavailable' } }) : route.continue());
+        await modal.getByRole('button', { name: 'Remove link', exact: true }).click();
+        const failedRemoval = owner.waitForResponse(r => r.url() === `${base}${endpoint}` && r.request().method() === 'DELETE');
+        await confirm.getByRole('button', { name: 'Remove link', exact: true }).click();
+        assert.equal((await failedRemoval).status(), 500);
+        await owner.getByRole('alert').filter({ hasText: 'could not be saved' }).first().waitFor();
+        assert(await confirm.isVisible());
+        assert.equal((await guest.request.get(url)).status(), 200, 'Failed removal must retain the public link');
+        await owner.unroute(`**${endpoint}`);
+        await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await confirm.waitFor({ state: 'hidden' });
 
         const response = await guest.goto(url);
         assert.equal(response.status(), 200);
@@ -215,7 +257,18 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
         assert.deepEqual(writes, [], 'The public reader must not issue writes');
 
         assert.equal((await request(owner, `${path}/collaborations`, 'POST', { email: 'sam@example.test' })).status, 200);
+        await modal.getByRole('button', { name: 'Remove link', exact: true }).click();
+        await confirm.getByRole('button', { name: 'Remove link', exact: true }).click();
+        await confirm.waitFor({ state: 'hidden' });
+        await modal.getByRole('button', { name: 'Create link', exact: true }).waitFor();
+        assert.equal(await input.count(), 0);
+        assert.equal((await guest.request.get(url, { headers: { Accept: 'application/json' } })).status(), 404);
+        await modal.getByRole('button', { name: 'Create link', exact: true }).click();
+        await input.waitFor();
+        const renewed = await input.inputValue();
+        assert.notEqual(renewed, url);
         assert.equal((await request(outsider, endpoint, 'DELETE')).status, 200, 'Existing members may revoke a public link');
+        assert.equal((await guest.request.get(renewed, { headers: { Accept: 'application/json' } })).status(), 404);
         assert.equal((await guest.request.get(url, { headers: { Accept: 'application/json' } })).status(), 404);
         assert.equal((await guest.request.get(`${url}/files?node=${pictureNode.id}`, { headers: { Accept: 'application/json' } })).status(), 404);
         assert.equal((await guest.reload()).status(), 404);

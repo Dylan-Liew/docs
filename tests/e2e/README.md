@@ -99,6 +99,13 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Mobile sharing failures to cover: the URL must use the full row at 320/390px,
+avoid horizontal overflow and Safari input zoom, and keep actions at least 44px
+tall. Copy/open must remain distinct from labelled link removal. Confirmation
+must support Cancel/Escape without revoking, retain the link after failed removal,
+and invalidate it only after confirmed success. Verify both themes and desktop,
+preserve collaborator controls, and save screenshots for repeatable review.
+
 Sharing-copy failures to cover: the signed-in/public-link descriptions must not
 appear; access selection, link creation/copy/revocation and error alerts must
 remain usable without blank caption rows on mobile and desktop.

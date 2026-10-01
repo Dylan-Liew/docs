@@ -10,10 +10,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Input from '@/components/ui/input/Input.vue';
-import { Check, ChevronDown, Copy, ExternalLink, Search, Unlink } from 'lucide-vue-next';
+import { Check, ChevronDown, Copy, ExternalLink, Search } from 'lucide-vue-next';
 import { TabsRoot, TabsList, TabsTrigger, TabsContent, type AcceptableValue } from 'reka-ui';
 import { useModalManager } from '@/composables/useModalManager';
 import { useRequest } from '@/composables/useRequest';
+import { cn } from '@/lib/utils';
 import Trash from '@/icons/Trash.vue';
 import { useVaultStore } from '@/stores/vault';
 import { VaultCollaborator, VaultUser } from '@/types/vault';
@@ -37,14 +38,31 @@ const linkError = ref('');
 const copied = ref(false);
 let copyTimer: ReturnType<typeof setTimeout> | undefined;
 onBeforeUnmount(() => clearTimeout(copyTimer));
-function changeLink(enabled: boolean) {
+function createLink() {
     if (link.processing) return;
     linkError.value = '';
     copied.value = false;
-    link[enabled ? 'post' : 'delete']<{ data: { share_url: string | null } }>(`/vaults/${props.vaultId}/share`, {
+    link.post<{ data: { share_url: string | null } }>(`/vaults/${props.vaultId}/share`, {
         onSuccess: ({ data }) => { vaultStore.shareUrl = data.share_url; },
         onFailure: message => { linkError.value = message; },
         onInvalid: () => { linkError.value = 'Could not update the link. Try again.'; },
+    });
+}
+function removeLink() {
+    openModal(RequestConfirmationModal, {
+        title: 'Remove public link',
+        url: `/vaults/${props.vaultId}/share`,
+        method: 'delete',
+        label: 'Remove link',
+        content: 'This link will stop working. People added to this vault will keep their access.',
+        successMessage: 'Public link removed',
+        onSuccess: () => {
+            vaultStore.shareUrl = null;
+            linkError.value = '';
+            copied.value = false;
+            clearTimeout(copyTimer);
+            nextTick(() => document.getElementById(`${listId}-create-link`)?.focus());
+        },
     });
 }
 async function copyLink() {
@@ -199,16 +217,18 @@ const deleteCollaborator = (userId: number) => {
         <p v-if="!access.is_public" class="text-muted-foreground w-full text-xs">Only people added below have access.</p>
         <p v-if="accessError" role="alert" class="text-destructive w-full text-sm">{{ accessError }}</p>
     </div>
-    <section class="mb-4 flex flex-col gap-2" aria-label="Public link">
+    <section class="border-input mb-4 flex min-w-0 flex-col gap-3 rounded-lg border p-3" aria-label="Public link">
         <div class="flex items-center justify-between gap-2">
             <span class="text-sm font-medium">Public link</span>
-            <Button v-if="!vaultStore.shareUrl" variant="outline" :disabled="link.processing" :aria-busy="link.processing" @click="changeLink(true)">Create link</Button>
-            <Button v-else variant="ghost" size="icon" :disabled="link.processing" :aria-busy="link.processing" aria-label="Disable public link" title="Disable public link" @click="changeLink(false)"><Unlink class="size-4" /></Button>
+            <Button v-if="!vaultStore.shareUrl" :id="`${listId}-create-link`" variant="outline" class="h-11 px-3 text-xs" :disabled="link.processing" :aria-busy="link.processing" @click="createLink">Create link</Button>
+            <Button v-else variant="ghost" class="text-destructive hover:text-destructive h-11 px-2 text-xs" @click="removeLink">Remove link</Button>
         </div>
-        <div v-if="vaultStore.shareUrl" class="flex min-w-0 items-center gap-1">
-            <Input :value="vaultStore.shareUrl" readonly aria-label="Public link URL" class="min-w-0 flex-1 text-xs" @focus="($event.target as HTMLInputElement).select()" />
-            <Button variant="ghost" size="icon" class="shrink-0" :aria-label="copied ? 'Link copied' : 'Copy public link'" :title="copied ? 'Copied' : 'Copy link'" @click="copyLink"><Check v-if="copied" class="size-4" /><Copy v-else class="size-4" /></Button>
-            <a :href="vaultStore.shareUrl" target="_blank" rel="noopener noreferrer" :class="buttonVariants({ variant: 'ghost', size: 'icon' })" aria-label="Open public link" title="Open link"><ExternalLink class="size-4" /></a>
+        <div v-if="vaultStore.shareUrl" class="flex min-w-0 flex-col gap-2 sm:flex-row">
+            <Input :value="vaultStore.shareUrl" readonly aria-label="Public link URL" class="h-11 min-h-11 min-w-0 shrink-0 text-base shadow-none sm:flex-1 sm:text-sm" @focus="($event.target as HTMLInputElement).select()" />
+            <div class="grid shrink-0 grid-cols-2 gap-2 sm:flex">
+                <Button variant="outline" class="h-11 px-3 text-xs" :aria-label="copied ? 'Link copied' : 'Copy public link'" @click="copyLink"><Check v-if="copied" class="size-3.5" aria-hidden="true" /><Copy v-else class="size-3.5" aria-hidden="true" />{{ copied ? 'Copied' : 'Copy link' }}</Button>
+                <a :href="vaultStore.shareUrl" target="_blank" rel="noopener noreferrer" :class="cn(buttonVariants({ variant: 'outline' }), 'h-11 px-3 text-xs')" aria-label="Open public link"><ExternalLink class="size-3.5" aria-hidden="true" />Open link</a>
+            </div>
         </div>
         <p v-if="linkError" role="alert" class="text-destructive text-sm">{{ linkError }}</p>
     </section>

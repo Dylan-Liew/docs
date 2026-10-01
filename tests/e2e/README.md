@@ -104,7 +104,8 @@ key; existing 64-character URLs and their shorter aliases must resolve the same
 vault and revoke together. Invalid/altered keys, cross-vault files and writes
 must remain blocked. Both link formats and assets must pass the tunnel's narrow
 public rule without changing workspace/MCP authentication. The share icon must
-retain its 16px size, themed button, accessible label and mobile/desktop placement.
+render at 14px without shrinking its 36px click area, losing its accessible label,
+changing placement or preventing collaboration from opening on mobile/desktop.
 
 Public-link failures to verify before implementation: guests must not reach the
 editor, MCP, collaboration endpoints, private vaults, or files outside the shared

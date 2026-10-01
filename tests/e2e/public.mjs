@@ -81,7 +81,9 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
             assert.equal(await share.locator('svg.lucide-share-2').count(), 1, 'Use the share icon, not the users icon');
             assert.equal(await share.locator('svg.lucide-users-round').count(), 0);
             const box = await share.locator('svg').boundingBox();
-            assert(box.width === 16 && box.height === 16);
+            assert(box.width === 14 && box.height === 14);
+            const buttonBox = await share.boundingBox();
+            assert(buttonBox.width === 36 && buttonBox.height === 36, 'Keep the share button click area unchanged');
             await owner.screenshot({ path: new URL(`share-icon-${width}.png`, dir).pathname, animations: 'disabled' });
             if (width < 1024) await toggle.click();
         }

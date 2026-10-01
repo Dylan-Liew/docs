@@ -84,6 +84,7 @@ export async function sharing({ browser, base, jwt, dir, socketPort }) {
             await modal.waitFor();
             const picker = modal.getByRole('button', { name: 'Access', exact: true });
             assert.equal((await picker.innerText()).trim(), 'Restricted');
+            assert.equal(await modal.getByText('Anyone with the link can read this vault.', { exact: true }).count(), 0);
             assert.equal(await modal.locator('select').count(), 0);
             await owner.screenshot({ path: new URL(`sharing-${width}.png`, dir).pathname });
             assert(await modal.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1; }));
@@ -121,6 +122,9 @@ export async function sharing({ browser, base, jwt, dir, socketPort }) {
         await owner.reload();
         await owner.getByRole('button', { name: 'Collaboration', exact: true }).click();
         assert.equal((await select.innerText()).trim(), 'Public');
+        const publicModal = owner.getByRole('dialog', { name: 'Collaboration', exact: true });
+        assert.equal(await publicModal.getByText('Everyone signed into Docs can read and edit.', { exact: true }).count(), 0);
+        assert.equal(await publicModal.getByText('Anyone with the link can read this vault.', { exact: true }).count(), 0);
         await owner.screenshot({ path: new URL('sharing-public.png', dir).pathname });
         await owner.setViewportSize({ width: 320, height: 844 });
         await owner.screenshot({ path: new URL('sharing-public-mobile.png', dir).pathname });

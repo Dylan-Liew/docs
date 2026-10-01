@@ -99,6 +99,10 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Sharing-copy failures to cover: the signed-in/public-link descriptions must not
+appear; access selection, link creation/copy/revocation and error alerts must
+remain usable without blank caption rows on mobile and desktop.
+
 Short-link failures to cover: new links must use a 22-character URL-safe random
 key; existing 64-character URLs and their shorter aliases must resolve the same
 vault and revoke together. Invalid/altered keys, cross-vault files and writes

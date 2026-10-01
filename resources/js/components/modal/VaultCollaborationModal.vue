@@ -196,7 +196,7 @@ const deleteCollaborator = (userId: number) => {
                 </DropdownMenuRadioGroup>
             </DropdownMenuContent>
         </DropdownMenu>
-        <p class="text-muted-foreground w-full text-xs">{{ access.is_public ? 'Everyone signed into Docs can read and edit.' : 'Only people added below have access.' }}</p>
+        <p v-if="!access.is_public" class="text-muted-foreground w-full text-xs">Only people added below have access.</p>
         <p v-if="accessError" role="alert" class="text-destructive w-full text-sm">{{ accessError }}</p>
     </div>
     <section class="mb-4 flex flex-col gap-2" aria-label="Public link">
@@ -205,7 +205,6 @@ const deleteCollaborator = (userId: number) => {
             <Button v-if="!vaultStore.shareUrl" variant="outline" :disabled="link.processing" :aria-busy="link.processing" @click="changeLink(true)">Create link</Button>
             <Button v-else variant="ghost" size="icon" :disabled="link.processing" :aria-busy="link.processing" aria-label="Disable public link" title="Disable public link" @click="changeLink(false)"><Unlink class="size-4" /></Button>
         </div>
-        <p class="text-muted-foreground text-xs">Anyone with the link can read this vault.</p>
         <div v-if="vaultStore.shareUrl" class="flex min-w-0 items-center gap-1">
             <Input :value="vaultStore.shareUrl" readonly aria-label="Public link URL" class="min-w-0 flex-1 text-xs" @focus="($event.target as HTMLInputElement).select()" />
             <Button variant="ghost" size="icon" class="shrink-0" :aria-label="copied ? 'Link copied' : 'Copy public link'" :title="copied ? 'Copied' : 'Copy link'" @click="copyLink"><Check v-if="copied" class="size-4" /><Copy v-else class="size-4" /></Button>

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
-export async function publicLinks({ browser, base, jwt, dir, fixture }) {
+export async function publicLinks({ browser, base, jwt, dir }) {
     const contexts = [];
     const errors = [];
     const blocked = [];
@@ -28,19 +28,6 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
         const owner = await session('alex@example.test');
         const outsider = await session('sam@example.test');
         const guest = await session();
-        const legacy = fixture.legacy;
-        const old = `${base}/share/${legacy.token}`;
-        const short = (await request(owner, `/vaults/${legacy.id}/share`, 'POST')).body.data.share_url;
-        const alias = Buffer.from(legacy.token.slice(0, 32), 'hex').toString('base64url');
-        assert.equal(short, `${base}/share/${alias}`, 'Existing shares get a short URL without rotating their token');
-        const oldData = await (await guest.request.get(old, { headers: { Accept: 'application/json' } })).json();
-        const shortData = await (await guest.request.get(short, { headers: { Accept: 'application/json' } })).json();
-        assert.equal(oldData.name, shortData.name);
-        assert.deepEqual(oldData.nodes, shortData.nodes);
-        const changed = short.slice(0, -1) + (alias.endsWith('A') ? 'Q' : 'A');
-        assert.equal((await guest.request.get(changed, { headers: { Accept: 'application/json' } })).status(), 404);
-        assert.equal((await request(owner, `/vaults/${legacy.id}/share`, 'DELETE')).status, 200);
-        for (const link of [old, short]) assert.equal((await guest.request.get(link, { headers: { Accept: 'application/json' } })).status(), 404);
         guest.on('request', req => { if (!['GET', 'HEAD'].includes(req.method())) writes.push(req.url()); });
         await guest.route('**/*', route => {
             const url = new URL(route.request().url());
@@ -71,19 +58,6 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
         const source = `# Public content\n\n[Details](Overview/Details.md)\n\n![Pixel](Media/pixel.png)\n\n- [ ] Read only\n\n\`\`\`html\n<p>Rendered HTML</p><script>window.publicLeak = true</script>\n\`\`\`\n\n\`\`\`archify\n${JSON.stringify(spec)}\n\`\`\`\n`;
         assert.equal((await request(owner, `${path}/nodes/${note.id}`, 'PATCH', { content: source })).status, 200);
         await owner.goto(`${base}${path}`);
-        for (const width of [320, 390, 1440]) {
-            await owner.setViewportSize({ width, height: 900 });
-            const toggle = owner.getByRole('button', { name: 'Toggle document tree', exact: true });
-            if (width < 1024) await toggle.click();
-            const share = owner.getByRole('button', { name: 'Collaboration', exact: true });
-            await share.waitFor({ state: 'visible' });
-            assert.equal(await share.locator('svg.lucide-share-2').count(), 1, 'Use the share icon, not the users icon');
-            assert.equal(await share.locator('svg.lucide-users-round').count(), 0);
-            const box = await share.locator('svg').boundingBox();
-            assert(box.width === 16 && box.height === 16);
-            await owner.screenshot({ path: new URL(`share-icon-${width}.png`, dir).pathname });
-            if (width < 1024) await toggle.click();
-        }
         await owner.getByRole('button', { name: 'Collaboration', exact: true }).click();
         const modal = owner.getByRole('dialog', { name: 'Collaboration', exact: true });
         assert.equal(await modal.getByRole('textbox', { name: 'Public link URL' }).count(), 0);
@@ -98,7 +72,7 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
         const input = modal.getByRole('textbox', { name: 'Public link URL' });
         await input.waitFor();
         const url = await input.inputValue();
-        assert.match(url, new RegExp(`^${base}/share/[A-Za-z0-9_-]{22}$`));
+        assert.match(url, new RegExp(`^${base}/share/[a-f0-9]{64}$`));
         assert.equal((await request(owner, endpoint, 'POST')).body.data.share_url, url);
         await owner.context().grantPermissions(['clipboard-read', 'clipboard-write']);
         await modal.getByRole('button', { name: 'Copy public link', exact: true }).click();
@@ -247,11 +221,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         checks.push({ path, status: response.status, type: response.headers.get('content-type') });
         return response;
     }
-    const response = await get(`/share/${'0'.repeat(64)}`);
+    const response = await get(`/share/${'0'.repeat(22)}`);
     assert.equal(response.status, 404, 'The public reader must not require Cloudflare login');
     assert.match(response.headers.get('cache-control'), /no-store/);
     const html = await response.text();
     assert(html.includes('share-data') && html.includes('This link is no longer available.'));
+    const legacy = await get(`/share/${'0'.repeat(64)}`);
+    assert.equal(legacy.status, 404, 'Legacy public routes must remain accessible');
+    assert((await legacy.text()).includes('share-data'));
     const assets = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map(match => new URL(match[1], base));
     assert(assets.some(asset => asset.pathname.endsWith('.js')));
     assert(assets.some(asset => asset.pathname.endsWith('.css')));

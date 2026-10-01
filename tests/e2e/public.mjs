@@ -75,13 +75,14 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
             await owner.setViewportSize({ width, height: 900 });
             const toggle = owner.getByRole('button', { name: 'Toggle document tree', exact: true });
             if (width < 1024) await toggle.click();
+            await owner.waitForFunction(() => document.querySelector('aside')?.getBoundingClientRect().left === 0);
             const share = owner.getByRole('button', { name: 'Collaboration', exact: true });
             await share.waitFor({ state: 'visible' });
             assert.equal(await share.locator('svg.lucide-share-2').count(), 1, 'Use the share icon, not the users icon');
             assert.equal(await share.locator('svg.lucide-users-round').count(), 0);
             const box = await share.locator('svg').boundingBox();
             assert(box.width === 16 && box.height === 16);
-            await owner.screenshot({ path: new URL(`share-icon-${width}.png`, dir).pathname });
+            await owner.screenshot({ path: new URL(`share-icon-${width}.png`, dir).pathname, animations: 'disabled' });
             if (width < 1024) await toggle.click();
         }
         await owner.getByRole('button', { name: 'Collaboration', exact: true }).click();

@@ -195,6 +195,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     assert(assets.some(asset => asset.pathname.endsWith('.js')));
     assert(assets.some(asset => asset.pathname.endsWith('.css')));
     for (const asset of assets) {
+        // Cloudflare injects its analytics beacon independently of the Docs bundle.
+        if (asset.origin === 'https://static.cloudflareinsights.com') continue;
         assert.equal(asset.origin, new URL(base).origin);
         assert(asset.pathname.startsWith('/share/'));
         const response = await get(asset.pathname + asset.search);

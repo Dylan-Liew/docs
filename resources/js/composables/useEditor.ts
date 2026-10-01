@@ -1,5 +1,6 @@
 import { createLazyLowlight, lazyLanguageFor } from '@/services/lowlight';
 import { markedService } from '@/services/marked';
+import DOMPurify from 'dompurify';
 import { CustomCodeBlockLowlight } from '@/services/tiptap/extension-custom-code-block-low-light';
 import { CustomImage } from '@/services/tiptap/extension-custom-image';
 import { CustomLink } from '@/services/tiptap/extension-custom-link';
@@ -24,6 +25,8 @@ import { onMounted, onUnmounted, Ref, shallowRef, watch } from 'vue';
 
 interface SetupEditorOptions {
     vaultId: string;
+    readonly?: boolean;
+    fileUrl?: string;
     element: Ref<HTMLElement | null>;
     markdownElement: Ref<HTMLTextAreaElement | null>;
     autofocus?: boolean;
@@ -90,7 +93,8 @@ export function useEditor(options: SetupEditorOptions) {
         return encoded;
     };
 
-    const content = options.content ? markedService.parse(encodeText(options.content)) : '';
+    const safeHTML = (html: string) => options.readonly ? DOMPurify.sanitize(html) : html;
+    const content = options.content ? safeHTML(markedService.parse(encodeText(options.content)) as string) : '';
 
     onMounted(() => {
         const lowlight = createLazyLowlight(refreshCodeBlocks);
@@ -115,6 +119,7 @@ export function useEditor(options: SetupEditorOptions) {
                 }),
                 CustomImage.configure({
                     vaultId: options.vaultId,
+                    fileUrl: options.fileUrl,
                 }),
                 CustomLink.configure({
                     autolink: false,
@@ -137,15 +142,14 @@ export function useEditor(options: SetupEditorOptions) {
                     },
                 }),
                 CustomTableColumnAlign,
-                VaultFileDrop,
-                VaultFileUpload.configure({
+                ...(options.readonly ? [] : [VaultFileDrop, VaultFileUpload.configure({
                     uploadFiles: options.uploadFiles,
                     placeholderClass:
                         'bg-light-base-300 dark:bg-base-800 text-light-base-700 dark:text-base-200 rounded-sm px-1 text-sm',
-                }),
+                })]),
             ],
             content: content,
-            editable: options.isEditMode.value,
+            editable: !options.readonly && options.isEditMode.value,
             editorProps: {
                 attributes: {
                     class: 'h-full !max-w-none flow-root focus:outline-none prose dark:prose-invert',
@@ -157,7 +161,7 @@ export function useEditor(options: SetupEditorOptions) {
                 setMarkdownContent(options.content);
             },
             onUpdate() {
-                if (isSyncing) {
+                if (isSyncing || options.readonly) {
                     return;
                 }
 
@@ -253,7 +257,7 @@ export function useEditor(options: SetupEditorOptions) {
         isSyncing = true;
 
         const html = await markedService.parse(encodeText(markdown));
-        setTiptapContent(html);
+        setTiptapContent(safeHTML(html));
         setMarkdownContent(markdown);
 
         isSyncing = false;
@@ -269,7 +273,7 @@ export function useEditor(options: SetupEditorOptions) {
         isSyncing = true;
 
         const html = await markedService.parse(encodeText(markdown));
-        setTiptapContent(html);
+        setTiptapContent(safeHTML(html));
 
         isSyncing = false;
     }
@@ -277,7 +281,7 @@ export function useEditor(options: SetupEditorOptions) {
     watch(options.isEditMode, value => {
         isSyncing = true;
 
-        editor.value?.setEditable(value);
+        editor.value?.setEditable(!options.readonly && value);
 
         isSyncing = false;
     });

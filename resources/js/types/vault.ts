@@ -7,6 +7,7 @@ export interface Vault {
     user: VaultUser;
     collaborators: VaultCollaborator[];
     is_public: boolean;
+    share_url: string | null;
     created_by: number;
     updated_at: string;
 }

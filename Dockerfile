@@ -12,7 +12,7 @@ COPY config config
 COPY routes routes
 COPY resources resources
 COPY public/assets public/assets
-COPY package.json package-lock.json vite.config.js tsconfig.json ./
+COPY package.json package-lock.json vite.config.js vite.share.js tsconfig.json ./
 RUN npm ci && npm run build && npm run typecheck
 
 FROM brufdev/many-notes:0.18
@@ -38,6 +38,8 @@ COPY --chown=www-data:www-data public/icon-dark.svg /var/www/html/public/docs-da
 COPY --chown=www-data:www-data public/icon-light.svg /var/www/html/public/assets/icon-light.svg
 COPY --chown=www-data:www-data public/icon-dark.svg /var/www/html/public/assets/icon-dark.svg
 COPY --from=build --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
+COPY --from=build --chown=www-data:www-data /var/www/html/public/share/build /var/www/html/public/share/build
+COPY --chown=www-data:www-data public/icon-light.svg public/icon-dark.svg public/touch.png /var/www/html/public/share/
 COPY deploy/docker/performance.conf /etc/nginx/server-opts.d/performance.conf
 COPY deploy/docker/s6-overlay/reverb/run /etc/s6-overlay/s6-rc.d/reverb/run
 COPY deploy/docker/s6-overlay/typesense/run /etc/s6-overlay/s6-rc.d/typesense/run

@@ -17,6 +17,7 @@ final readonly class VaultViewModel
         public VaultUserViewModel $user,
         public SupportCollection $collaborators,
         public bool $is_public,
+        public ?string $share_url,
     ) {
         //
     }
@@ -30,6 +31,7 @@ final readonly class VaultViewModel
             VaultUserViewModel::fromModel($vault->user),
             $vault->collaborators()->get()->map(VaultCollaboratorViewModel::fromModel(...)),
             $vault->is_public,
+            $vault->shareUrl(),
         );
     }
 }

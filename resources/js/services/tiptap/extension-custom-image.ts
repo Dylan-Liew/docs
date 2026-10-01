@@ -3,6 +3,7 @@ import Image, { ImageOptions } from '@tiptap/extension-image';
 
 export interface CustomImageOptions extends ImageOptions {
     vaultId: string | null;
+    fileUrl?: string;
 }
 
 export const CustomImage = Image.extend<CustomImageOptions>({
@@ -11,6 +12,7 @@ export const CustomImage = Image.extend<CustomImageOptions>({
             ...this.parent!(),
             inline: true,
             vaultId: null,
+            fileUrl: undefined,
         };
     },
 
@@ -18,7 +20,9 @@ export const CustomImage = Image.extend<CustomImageOptions>({
         const { src, ...rest } = HTMLAttributes;
         const resolvedSrc =
             src && !src.startsWith('http://') && !src.startsWith('https://') && this.options.vaultId
-                ? `/files/${this.options.vaultId}?path=${src}`
+                ? this.options.fileUrl
+                    ? this.options.fileUrl + encodeURIComponent(src)
+                    : `/files/${this.options.vaultId}?path=${src}`
                 : src;
 
         return ['img', mergeAttributes(this.options.HTMLAttributes, { ...rest, src: resolvedSrc })];

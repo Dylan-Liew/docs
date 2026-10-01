@@ -12,6 +12,7 @@ final readonly class VaultUpdateViewModel
         public string $name,
         public ?int $templates_node_id,
         public bool $is_public,
+        public ?string $share_url,
     ) {
         //
     }
@@ -22,6 +23,7 @@ final readonly class VaultUpdateViewModel
             $vault->name,
             $vault->templates_node_id,
             $vault->is_public,
+            $vault->shareUrl(),
         );
     }
 
@@ -32,6 +34,7 @@ final readonly class VaultUpdateViewModel
             'name' => $this->name,
             'templates_node_id' => $this->templates_node_id,
             'is_public' => $this->is_public,
+            'share_url' => $this->share_url,
         ];
     }
 }

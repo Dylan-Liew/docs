@@ -4,6 +4,7 @@ A private workspace for writing and sharing Markdown notes.
 
 - Rich-text and Markdown editing
 - Shared vaults, nested notes, drag-and-drop and document search
+- Optional read-only public links
 - HTML/CSS previews with JavaScript disabled
 - Interactive [JSON diagrams](docs/diagrams.md) with an expanded preview
 - Cloudflare Access sign-in, shared with [MCP agents](docs/mcp.md)

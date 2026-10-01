@@ -10,6 +10,7 @@ export const useVaultStore = defineStore('vault', () => {
     const user = ref<VaultUser | null>(null);
     const collaborators = ref<VaultCollaborator[]>([]);
     const isPublic = ref(false);
+    const shareUrl = ref<string | null>(null);
 
     function setVault(vault: Vault | null): void {
         id.value = vault?.id ?? null;
@@ -18,12 +19,14 @@ export const useVaultStore = defineStore('vault', () => {
         user.value = vault?.user ?? null;
         collaborators.value = vault?.collaborators ?? [];
         isPublic.value = vault?.is_public ?? false;
+        shareUrl.value = vault?.share_url ?? null;
     }
 
     function updateVault(data: VaultUpdated): void {
         name.value = data.name;
         templates_node_id.value = data.templates_node_id;
         isPublic.value = data.is_public;
+        shareUrl.value = data.share_url;
     }
 
     function isTemplateFolder(nodeId: number): boolean {
@@ -60,6 +63,7 @@ export const useVaultStore = defineStore('vault', () => {
         user,
         collaborators,
         isPublic,
+        shareUrl,
         setVault,
         updateVault,
         isTemplateFolder,

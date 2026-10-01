@@ -21,6 +21,7 @@ use Staudenmeir\EloquentHasManyDeep\HasRelationships;
  * @property-read string $name
  * @property-read int $created_by
  * @property-read bool $is_public
+ * @property-read string|null $share_token
  * @property-read CarbonImmutable|null $opened_at
  * @property-read CarbonImmutable $created_at
  * @property-read CarbonImmutable $updated_at
@@ -33,6 +34,13 @@ use Staudenmeir\EloquentHasManyDeep\HasRelationships;
 final class Vault extends Model
 {
     use HasRelationships;
+
+    protected $hidden = ['share_token'];
+
+    public function shareUrl(): ?string
+    {
+        return $this->share_token === null ? null : rtrim(config('app.url'), '/') . '/share/' . $this->share_token;
+    }
 
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo

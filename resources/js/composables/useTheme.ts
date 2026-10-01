@@ -16,9 +16,10 @@ watchEffect(() => {
     }
 
     const dark = theme.value === 'dark';
-    document.querySelector<HTMLLinkElement>('#favicon')?.setAttribute('href', `/icon-${theme.value}.svg?v=docs15`);
-    document.querySelector<HTMLLinkElement>('#favicon-fallback')?.setAttribute('href', `/icon${dark ? '-dark' : ''}.ico?v=docs15`);
-    document.querySelector<HTMLLinkElement>('#favicon-png')?.setAttribute('href', `/icon${dark ? '-dark' : ''}.png?v=docs15`);
+    const assetBase = document.documentElement.dataset.assetBase ?? '';
+    document.querySelector<HTMLLinkElement>('#favicon')?.setAttribute('href', `${assetBase}/icon-${theme.value}.svg?v=docs15`);
+    document.querySelector<HTMLLinkElement>('#favicon-fallback')?.setAttribute('href', `${assetBase}/icon${dark ? '-dark' : ''}.ico?v=docs15`);
+    document.querySelector<HTMLLinkElement>('#favicon-png')?.setAttribute('href', `${assetBase}/icon${dark ? '-dark' : ''}.png?v=docs15`);
     try { localStorage.setItem('theme', theme.value); } catch {}
 });
 

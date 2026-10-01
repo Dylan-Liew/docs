@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShareController;
+use App\Http\Middleware\Access;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Controllers\VaultCollaborationController;
 use App\Http\Controllers\VaultController;
 use App\Http\Controllers\VaultEditorApplyTemplateController;
@@ -17,6 +20,12 @@ use App\Http\Controllers\VaultNodeImportController;
 use App\Http\Controllers\VaultNodeMoveController;
 use App\Http\Controllers\VaultSearchController;
 use Illuminate\Support\Facades\Route;
+
+Route::prefix('share/{token}')->where(['token' => '[a-f0-9]{64}'])
+    ->withoutMiddleware([Access::class, HandleInertiaRequests::class])->group(function (): void {
+        Route::get('', [ShareController::class, 'show'])->middleware('throttle:120,1');
+        Route::get('files', [ShareController::class, 'files'])->middleware('throttle:240,1');
+    });
 
 Route::middleware('auth')->group(function (): void {
     // Render home at / instead of redirecting, so WebKit associates the tab icon with the URL users open.
@@ -31,6 +40,8 @@ Route::middleware('auth')->group(function (): void {
             Route::patch('', [VaultController::class, 'update'])->name('update');
             Route::delete('', [VaultController::class, 'destroy'])->name('destroy');
             Route::get('export', VaultExportController::class)->name('export');
+            Route::post('share', [ShareController::class, 'store'])->name('share.store');
+            Route::delete('share', [ShareController::class, 'destroy'])->name('share.destroy');
         });
 
         Route::post('import', VaultImportController::class)->name('import');

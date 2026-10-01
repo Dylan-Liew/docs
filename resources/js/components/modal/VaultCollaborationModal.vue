@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { destroy, index, store, update } from '@/actions/App/Http/Controllers/VaultCollaborationController';
 import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button/variants';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,7 +10,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Input from '@/components/ui/input/Input.vue';
-import { ChevronDown, Search } from 'lucide-vue-next';
+import { Check, ChevronDown, Copy, ExternalLink, Search, Unlink } from 'lucide-vue-next';
 import { TabsRoot, TabsList, TabsTrigger, TabsContent, type AcceptableValue } from 'reka-ui';
 import { useModalManager } from '@/composables/useModalManager';
 import { useRequest } from '@/composables/useRequest';
@@ -17,7 +18,7 @@ import Trash from '@/icons/Trash.vue';
 import { useVaultStore } from '@/stores/vault';
 import { VaultCollaborator, VaultUser } from '@/types/vault';
 import { usePage } from '@inertiajs/vue3';
-import { computed, nextTick, ref, useId, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import RequestConfirmationModal from './RequestConfirmationModal.vue';
 
 const props = defineProps<{
@@ -31,6 +32,33 @@ const { openModal } = useModalManager();
 const form = useRequest<{ email: string }>({ email: '' });
 const access = useRequest({ is_public: vaultStore.isPublic });
 const accessError = ref('');
+const link = useRequest({});
+const linkError = ref('');
+const copied = ref(false);
+let copyTimer: ReturnType<typeof setTimeout> | undefined;
+onBeforeUnmount(() => clearTimeout(copyTimer));
+function changeLink(enabled: boolean) {
+    if (link.processing) return;
+    linkError.value = '';
+    copied.value = false;
+    link[enabled ? 'post' : 'delete']<{ data: { share_url: string | null } }>(`/vaults/${props.vaultId}/share`, {
+        onSuccess: ({ data }) => { vaultStore.shareUrl = data.share_url; },
+        onFailure: message => { linkError.value = message; },
+        onInvalid: () => { linkError.value = 'Could not update the link. Try again.'; },
+    });
+}
+async function copyLink() {
+    if (!vaultStore.shareUrl) return;
+    linkError.value = '';
+    try {
+        await navigator.clipboard.writeText(vaultStore.shareUrl);
+        copied.value = true;
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => { copied.value = false; }, 2000);
+    } catch {
+        linkError.value = 'Could not copy the link. Select it and copy manually.';
+    }
+}
 function changeAccess(value: AcceptableValue) {
     if (value !== 'public' && value !== 'restricted') return;
     if (access.processing || (value === 'public') === access.is_public) return;
@@ -171,6 +199,20 @@ const deleteCollaborator = (userId: number) => {
         <p class="text-muted-foreground w-full text-xs">{{ access.is_public ? 'Everyone signed into Docs can read and edit.' : 'Only people added below have access.' }}</p>
         <p v-if="accessError" role="alert" class="text-destructive w-full text-sm">{{ accessError }}</p>
     </div>
+    <section class="mb-4 flex flex-col gap-2" aria-label="Public link">
+        <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium">Public link</span>
+            <Button v-if="!vaultStore.shareUrl" variant="outline" :disabled="link.processing" :aria-busy="link.processing" @click="changeLink(true)">Create link</Button>
+            <Button v-else variant="ghost" size="icon" :disabled="link.processing" :aria-busy="link.processing" aria-label="Disable public link" title="Disable public link" @click="changeLink(false)"><Unlink class="size-4" /></Button>
+        </div>
+        <p class="text-muted-foreground text-xs">Anyone with the link can read this vault.</p>
+        <div v-if="vaultStore.shareUrl" class="flex min-w-0 items-center gap-1">
+            <Input :value="vaultStore.shareUrl" readonly aria-label="Public link URL" class="min-w-0 flex-1 text-xs" @focus="($event.target as HTMLInputElement).select()" />
+            <Button variant="ghost" size="icon" class="shrink-0" :aria-label="copied ? 'Link copied' : 'Copy public link'" :title="copied ? 'Copied' : 'Copy link'" @click="copyLink"><Check v-if="copied" class="size-4" /><Copy v-else class="size-4" /></Button>
+            <a :href="vaultStore.shareUrl" target="_blank" rel="noopener noreferrer" :class="buttonVariants({ variant: 'ghost', size: 'icon' })" aria-label="Open public link" title="Open link"><ExternalLink class="size-4" /></a>
+        </div>
+        <p v-if="linkError" role="alert" class="text-destructive text-sm">{{ linkError }}</p>
+    </section>
     <TabsRoot v-model="activeTab">
         <TabsList class="bg-muted flex gap-1 rounded-lg p-1" aria-label="Sharing">
             <TabsTrigger

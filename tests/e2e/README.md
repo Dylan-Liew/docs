@@ -4,7 +4,7 @@
 
 - Collaboration must be a separate icon beside the vault menu, accessible by
   touch/keyboard at 320px and desktop widths, with no duplicate dropdown entry.
-- Public means all verified Docs users, never anonymous access. Existing/new
+- The Access picker's Public means all verified Docs users, not anonymous access. Existing/new
   vaults remain restricted by default. Browser home, recent notes, deep links,
   files, search, edits and MCP must agree on access, including newly signed-in
   users. Returning to restricted must revoke implicit access but preserve explicit
@@ -99,6 +99,17 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Public-link failures to verify before implementation: guests must not reach the
+editor, MCP, collaboration endpoints, private vaults, or files outside the shared
+vault. Link creation and revocation must require an existing authorized user,
+retain input after failed saves, and invalidate old URLs without cached content.
+Deploying must leave every existing vault unpublished. Public pages must load
+all scripts, styles, icons, linked notes and attachments beneath `/share/*`,
+include no user/collaborator data, offer no editable fields or saves, preserve
+Markdown/HTML/diagram rendering, and fit 320px through desktop widths. Invalid
+tokens, missing/deleted notes, empty vaults and restricted methods must fail
+cleanly; public navigation must handle back/forward and stale requests.
+
 Build a candidate with `docker build -t docs:review .`, then run
 `node tests/e2e/run.mjs docs:review`. Requires Docker, `npm ci`, and Playwright
 Chromium (`npx playwright install chromium`). Screenshots and the report go to
@@ -115,6 +126,17 @@ Run `node tests/e2e/run.mjs docs:review --sharing` for the public-sharing checks
 phone/desktop screenshots and a real disposable Reverb WebSocket test. This checks
 that a socket kept open after access is revoked receives no further private content.
 Its report is `artifacts/e2e/sharing.json`.
+Run `node tests/e2e/run.mjs docs:review --public` for the anonymous public-reader
+checks. Private asset paths are deliberately blocked in the browser to emulate
+Cloudflare Access; the report is `artifacts/e2e/public.json` and screenshots use
+the `public-` prefix.
+Anonymous links require a separate Cloudflare Access application for
+`docs.x44ylan.com/share/*` with Bypass → Everyone; keep the main application
+authenticated. In Collaboration, create a Public link to publish a vault
+read-only, or disable it to revoke the URL. Existing vaults are not published.
+Run `node tests/e2e/public.mjs https://docs.x44ylan.com` to verify the deployed
+Access boundary and assets without publishing user content; its report is
+`artifacts/e2e/public-edge.json`.
 Access-picker checks cover keyboard selection, checked state, Escape returning
 focus without closing Collaboration, phone overflow, and failed saves restoring
 the previous selection. The picker must use the shared themed menu components.

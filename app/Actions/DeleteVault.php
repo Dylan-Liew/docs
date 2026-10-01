@@ -32,10 +32,10 @@ final readonly class DeleteVault
             $this->deleteFromDatabase($vault);
 
             DB::commit();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
-            throw new Exception(__('Something went wrong'));
+            throw new Exception(__('Something went wrong'), 0, $e);
         }
 
         // Delete vault from disk
@@ -57,7 +57,7 @@ final readonly class DeleteVault
     private function deleteFromDatabase(Vault $vault): void
     {
         $deleteVaultNode = app(DeleteVaultNode::class);
-        $rootNodes = $vault->nodes()->whereNull('parent_id')->get();
+        $rootNodes = $vault->nodes()->with('vault.user')->whereNull('parent_id')->get();
 
         foreach ($rootNodes as $node) {
             $deleteVaultNode->handle($node, false);

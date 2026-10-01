@@ -12,14 +12,16 @@ import { navigation } from './navigation.mjs';
 import { markdown } from './markdown.mjs';
 import { icons } from './icons.mjs';
 import { sharing } from './sharing.mjs';
+import { publicLinks } from './public.mjs';
 
 const image = process.argv[2] ?? 'docs:review';
 const baseline = process.argv.includes('--baseline');
 const onlySharing = process.argv.includes('--sharing');
+const onlyPublic = process.argv.includes('--public');
 const iconsOnly = process.argv.includes('--icons-only');
 const dir = new URL('../../artifacts/e2e/', import.meta.url);
 await mkdir(dir, { recursive: true });
-const report = new URL(`${onlySharing ? 'sharing' : baseline ? 'before' : 'report'}.json`, dir);
+const report = new URL(`${onlyPublic ? 'public' : onlySharing ? 'sharing' : baseline ? 'before' : 'report'}.json`, dir);
 const started = new Date().toISOString();
 await writeFile(report, JSON.stringify({ image, started, status: 'running' }, null, 2));
 const docker = (...args) =>
@@ -165,7 +167,9 @@ try {
         })
     );
     browser = await chromium.launch(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {});
-    if (onlySharing) {
+    if (onlyPublic) {
+        checks.push(await publicLinks({ browser, base, jwt, dir }));
+    } else if (onlySharing) {
         checks.push(await sharing({ browser, base, jwt, dir, socketPort }));
     } else {
     if (!baseline && !iconsOnly) checks.push(...await auth({ base, browser, jwt, fixture, bearer }));
@@ -1084,7 +1088,10 @@ try {
                 .catch(() => 'No page')
         );
     }
-    if (container) console.error(docker('logs', '--tail', '30', container));
+    if (container) {
+        console.error(docker('logs', '--tail', '30', container));
+        console.error(docker('exec', container, 'sh', '-c', 'tail -120 storage/logs/laravel.log 2>/dev/null || true'));
+    }
     throw error;
 } finally {
     await browser?.close();

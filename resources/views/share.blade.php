@@ -6,15 +6,15 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="no-referrer">
     <meta name="apple-mobile-web-app-title" content="Docs">
-    <link rel="apple-touch-icon" href="/share/touch.png" sizes="180x180">
-    <link id="favicon" rel="icon" type="image/svg+xml" href="/share/icon-light.svg">
+    <link rel="apple-touch-icon" href="/share/touch.png?v=line1" sizes="180x180">
+    <link id="favicon" rel="icon" type="image/svg+xml" href="/share/icon-light.svg?v=line1">
     <script>
     (function () {
         let theme;
         try { theme = localStorage.getItem('theme'); } catch {}
         const dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', dark);
-        document.getElementById('favicon').href = `/share/icon-${dark ? 'dark' : 'light'}.svg`;
+        document.getElementById('favicon').href = `/share/icon-${dark ? 'dark' : 'light'}.svg?v=line1`;
     })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/share.ts'], 'share/build')

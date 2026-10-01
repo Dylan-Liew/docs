@@ -53,8 +53,23 @@ export async function icons({ page }) {
                 for (const reload of [false, true]) {
                     if (reload) await page.reload();
                     const suffix = theme === 'dark' ? '-dark' : '';
-                    const expectedLinks = [`/icon${suffix}.ico?v=docs15`, `/icon${suffix}.png?v=docs15`, `/icon-${theme}.svg?v=docs15`];
+                    const expectedLinks = [`/icon${suffix}.ico?v=line1`, `/icon${suffix}.png?v=line1`, `/icon-${theme}.svg?v=line1`];
                     await page.waitForFunction((hrefs) => JSON.stringify([...document.querySelectorAll('link[rel="icon"]')].map(n => n.getAttribute('href'))) === JSON.stringify(hrefs), expectedLinks);
+                    const touch = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
+                    if (!touch.endsWith('?v=line1')) throw Error('Stale touch icon URL');
+                    const home = await page.evaluate(async (href) => {
+                        const image = new Image(); image.src = href; await image.decode();
+                        const canvas = document.createElement('canvas'); canvas.width = canvas.height = 180;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0);
+                        const pixels = ctx.getImageData(0, 0, 180, 180).data;
+                        let visible = 0;
+                        for (let i = 0; i < pixels.length; i += 4) if (pixels[i + 3] > 200) {
+                            if (pixels[i] < 230 || pixels[i + 1] < 230 || pixels[i + 2] < 230) throw Error('Home-screen icon has dark ink');
+                            visible++;
+                        }
+                        return { width: image.naturalWidth, height: image.naturalHeight, corner: pixels[3], visible };
+                    }, touch);
+                    if (home.width !== 180 || home.height !== 180 || home.corner !== 0 || home.visible < 500) throw Error('Incorrect home-screen artwork');
                     for (const href of expectedLinks) {
                         const pixels = await page.evaluate(async (href) => {
                             const image = new Image();

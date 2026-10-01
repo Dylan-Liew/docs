@@ -143,7 +143,7 @@ authenticated. In Collaboration, create a Public link to publish a vault
 read-only, or disable it to revoke the URL. Existing vaults are not published.
 If the tunnel validates Access JWTs at the origin, add a separate Docs ingress
 before its protected catch-all, with `originRequest.access.required: false` and
-path `^/share/(([A-Za-z0-9_-]{22}|[a-f0-9]{64})(/files)?|build/assets/[A-Za-z0-9._-]+|icon-(light|dark)\.svg|touch\.png)$`.
+path `^/share/([a-f0-9]{64}(/files)?|build/assets/[A-Za-z0-9._-]+|icon-(light|dark)\.svg|touch\.png)$`.
 For a remotely managed tunnel, update the Cloudflare configuration too: it
 overrides the local YAML. Keep every other ingress and Access policy unchanged.
 Run `node tests/e2e/public.mjs https://docs.x44ylan.com` to verify the deployed

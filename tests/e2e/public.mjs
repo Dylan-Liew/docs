@@ -221,14 +221,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         checks.push({ path, status: response.status, type: response.headers.get('content-type') });
         return response;
     }
-    const response = await get(`/share/${'0'.repeat(22)}`);
+    const response = await get(`/share/${'0'.repeat(64)}`);
     assert.equal(response.status, 404, 'The public reader must not require Cloudflare login');
     assert.match(response.headers.get('cache-control'), /no-store/);
     const html = await response.text();
     assert(html.includes('share-data') && html.includes('This link is no longer available.'));
-    const legacy = await get(`/share/${'0'.repeat(64)}`);
-    assert.equal(legacy.status, 404, 'Legacy public routes must remain accessible');
-    assert((await legacy.text()).includes('share-data'));
     const assets = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map(match => new URL(match[1], base));
     assert(assets.some(asset => asset.pathname.endsWith('.js')));
     assert(assets.some(asset => asset.pathname.endsWith('.css')));

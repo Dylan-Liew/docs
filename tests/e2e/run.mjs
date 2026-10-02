@@ -237,6 +237,16 @@ try {
                 assert(
                     await page.getByRole('link', { name: 'Open Product', exact: true }).isVisible()
                 );
+                assert(await page.evaluate(() => {
+                    const vaults = document.querySelector('[aria-labelledby="vaults-title"]');
+                    const recent = document.querySelector('[aria-labelledby="recent-title"]');
+                    return !!(vaults.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING);
+                }), 'Vaults must precede Recent in DOM and keyboard order');
+                if (width >= 640) {
+                    const vaults = await page.locator('[aria-labelledby="vaults-title"]').boundingBox();
+                    const recent = await page.locator('[aria-labelledby="recent-title"]').boundingBox();
+                    assert(vaults.y + vaults.height <= recent.y, 'Show the vault list before Recent');
+                }
                 if (width < 640) {
                     const title = await page.locator('#home-title').boundingBox();
                     assert(
@@ -315,7 +325,7 @@ try {
         }
     }
     checks.push(
-        'Mobile vault-only list; Recent retained from 640px; light/dark layouts without overflow'
+        'Vaults precede Recent on tablet/desktop in DOM and visual order; mobile remains vault-only; both themes fit without overflow'
     );
     if (!baseline) {
         assert(await page.getByRole('img', { name: 'Shared', exact: true }).count());

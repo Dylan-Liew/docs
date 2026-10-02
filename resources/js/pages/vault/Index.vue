@@ -111,52 +111,6 @@ useEcho(`User.${userId.value}`, 'VaultListUpdatedEvent', refresh);
                 </div>
             </section>
 
-            <section
-                v-if="recentDocuments.length"
-                class="hidden sm:block"
-                aria-labelledby="recent-title"
-            >
-                <div class="mb-4 flex items-baseline justify-between gap-3">
-                    <h2 id="recent-title" class="text-sm font-semibold">Recent</h2>
-                </div>
-                <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    <Link
-                        v-for="document in recentDocuments"
-                        :key="document.id"
-                        :href="`/vaults/${document.vault_id}?file=${document.id}`"
-                        :aria-label="`Open ${document.name} in ${document.vault_name}`"
-                        class="group hover:bg-accent/60 focus-visible:ring-ring flex min-w-0 items-start gap-3 rounded-lg border px-4 py-3 transition-colors focus-visible:ring-2 focus-visible:outline-none sm:py-4"
-                    >
-                        <FileText
-                            class="text-muted-foreground mt-0.5 size-4 shrink-0"
-                            aria-hidden="true"
-                        />
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium" :title="document.name">
-                                {{ document.name }}
-                            </p>
-                            <p class="text-muted-foreground mt-1.5 flex items-center gap-2 text-xs">
-                                <span class="truncate" :title="document.vault_name">
-                                    {{ document.vault_name }}
-                                </span>
-                                <span aria-hidden="true">·</span>
-                                <time
-                                    :datetime="document.updated_at"
-                                    :title="fullDate(document.updated_at)"
-                                    class="shrink-0"
-                                >
-                                    {{ date(document.updated_at) }}
-                                </time>
-                            </p>
-                        </div>
-                        <ArrowUpRight
-                            class="text-muted-foreground size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-                            aria-hidden="true"
-                        />
-                    </Link>
-                </div>
-            </section>
-
             <section class="contents sm:block" aria-labelledby="vaults-title">
                 <div
                     class="col-start-1 row-start-1 flex min-w-0 flex-col sm:mb-4 sm:flex-row sm:items-end sm:justify-between"
@@ -282,6 +236,52 @@ useEcho(`User.${userId.value}`, 'VaultListUpdatedEvent', refresh);
                         <Plus class="size-4" aria-hidden="true" />
                         Create your first vault
                     </Button>
+                </div>
+            </section>
+
+            <section
+                v-if="recentDocuments.length"
+                class="hidden sm:block"
+                aria-labelledby="recent-title"
+            >
+                <div class="mb-4 flex items-baseline justify-between gap-3">
+                    <h2 id="recent-title" class="text-sm font-semibold">Recent</h2>
+                </div>
+                <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <Link
+                        v-for="document in recentDocuments"
+                        :key="document.id"
+                        :href="`/vaults/${document.vault_id}?file=${document.id}`"
+                        :aria-label="`Open ${document.name} in ${document.vault_name}`"
+                        class="group hover:bg-accent/60 focus-visible:ring-ring flex min-w-0 items-start gap-3 rounded-lg border px-4 py-3 transition-colors focus-visible:ring-2 focus-visible:outline-none sm:py-4"
+                    >
+                        <FileText
+                            class="text-muted-foreground mt-0.5 size-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium" :title="document.name">
+                                {{ document.name }}
+                            </p>
+                            <p class="text-muted-foreground mt-1.5 flex items-center gap-2 text-xs">
+                                <span class="truncate" :title="document.vault_name">
+                                    {{ document.vault_name }}
+                                </span>
+                                <span aria-hidden="true">·</span>
+                                <time
+                                    :datetime="document.updated_at"
+                                    :title="fullDate(document.updated_at)"
+                                    class="shrink-0"
+                                >
+                                    {{ date(document.updated_at) }}
+                                </time>
+                            </p>
+                        </div>
+                        <ArrowUpRight
+                            class="text-muted-foreground size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                            aria-hidden="true"
+                        />
+                    </Link>
                 </div>
             </section>
         </div>

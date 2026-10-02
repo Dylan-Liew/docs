@@ -99,6 +99,10 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Home order failures to cover: Vaults must precede Recent in DOM/keyboard and
+visual order on tablet/desktop, in both themes. Preserve A–Z sorting, search,
+recent-note links, empty states, and the vault-only mobile toolbar without gaps.
+
 Vault landing failures to cover: opening a vault must select its top-level note
 matching the vault name (case-insensitively), not a nested duplicate, folder,
 attachment or recently edited file. Without a matching note, use a top-level

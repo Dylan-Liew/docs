@@ -237,6 +237,15 @@ export async function publicLinks({ browser, base, jwt, dir, fixture }) {
             await guest.setViewportSize({ width, height: 900 });
             if (await guest.evaluate(() => document.documentElement.classList.contains('dark')) !== (theme === 'dark')) await guest.getByRole('button', { name: 'Toggle theme', exact: true }).click();
             await guest.locator('#share-content').evaluate(el => el.scrollTo(0, 0));
+            const link = content.getByRole('link', { name: 'Native absolute', exact: true });
+            await guest.mouse.move(0, 0);
+            assert.equal(await link.evaluate(el => getComputedStyle(el).textDecorationLine), 'none');
+            await link.hover();
+            assert.equal(await link.evaluate(el => getComputedStyle(el).textDecorationLine), 'none');
+            await link.focus();
+            assert.equal(await link.evaluate(el => getComputedStyle(el).textDecorationLine), 'none');
+            assert(await link.evaluate(el => getComputedStyle(el).color !== getComputedStyle(el.closest('.tiptap')).color));
+            await guest.locator('#share-content').evaluate(el => el.scrollTo(0, 0));
             assert(await guest.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             assert((await content.getByRole('heading', { name: 'Public content', exact: true }).boundingBox()).y >= 60, 'Content stays below the navbar');
             await guest.screenshot({ path: new URL(`public-${width}.png`, dir).pathname });

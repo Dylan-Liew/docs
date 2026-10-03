@@ -75,6 +75,7 @@
 
         a {
             color: #0369a1 !important;
+            text-decoration: none !important;
             cursor: pointer;
         }
 

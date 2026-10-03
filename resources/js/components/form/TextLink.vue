@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-    <Link :href="href" class="text-foreground hover:text-foreground underline underline-offset-2">
+    <Link :href="href" class="text-foreground hover:text-muted-foreground transition-colors focus-visible:outline-2 focus-visible:outline-ring">
         {{ label }}
     </Link>
 </template>

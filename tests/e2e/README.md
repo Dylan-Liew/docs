@@ -99,6 +99,10 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Links must remain underline-free at rest, hover and focus in editor/public notes
+on phones and desktop in both themes. Preserve distinct link colours, destinations,
+internal-note navigation, Markdown source and keyboard focus indication.
+
 Home search styling must match the Import button's resting background and border
 in both themes at phone/tablet/desktop widths, while preserving focus indication,
 search filtering and the compact mobile toolbar.

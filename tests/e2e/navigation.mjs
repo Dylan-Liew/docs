@@ -34,6 +34,16 @@ export async function navigation({ browser, base, jwt, dir }) {
             await page.locator('.tiptap').getByRole('heading', { name: 'Vault overview', exact: true }).waitFor();
             assert.equal(await page.getByRole('textbox', { name: 'Document title', exact: true }).inputValue(), 'navigation');
             assert.equal(await page.getByText('Recent files', { exact: true }).count(), 0);
+            const link = page.locator('.tiptap a').filter({ hasText: /^Bravo$/ });
+            for (const theme of ['light', 'dark']) {
+                await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
+                await page.mouse.move(0, 0);
+                assert.equal(await link.evaluate(el => getComputedStyle(el).textDecorationLine), 'none');
+                await link.hover();
+                assert.equal(await link.evaluate(el => getComputedStyle(el).textDecorationLine), 'none');
+                assert(await link.evaluate(el => getComputedStyle(el).color !== getComputedStyle(el.closest('.tiptap')).color));
+                await page.screenshot({ path: new URL(`links-${width}-${theme}.png`, dir).pathname, animations: 'disabled' });
+            }
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             await page.screenshot({ path: new URL(`vault-main-${width}.png`, dir).pathname, animations: 'disabled' });
         }

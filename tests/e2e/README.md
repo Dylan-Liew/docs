@@ -99,6 +99,10 @@ existing code blocks; the sidebar's original menus are retained.
 
 ## Run
 
+Home search styling must match the Import button's resting background and border
+in both themes at phone/tablet/desktop widths, while preserving focus indication,
+search filtering and the compact mobile toolbar.
+
 Home order failures to cover: Vaults must precede Recent in DOM/keyboard and
 visual order on tablet/desktop, in both themes. Preserve A–Z sorting, search,
 recent-note links, empty states, and the vault-only mobile toolbar without gaps.

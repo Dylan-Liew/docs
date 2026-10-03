@@ -129,7 +129,7 @@ useEcho(`User.${userId.value}`, 'VaultListUpdatedEvent', refresh);
                                 type="search"
                                 aria-label="Find a vault"
                                 placeholder="Find a vault…"
-                                class="bg-background placeholder:text-muted-foreground focus-visible:ring-ring h-11 w-full rounded-md border pr-3 pl-9 text-sm focus-visible:ring-2 focus-visible:outline-none sm:h-9"
+                                class="border-input bg-transparent placeholder:text-muted-foreground focus-visible:ring-ring h-11 w-full rounded-md border pr-3 pl-9 text-sm focus-visible:ring-2 focus-visible:outline-none sm:h-9"
                             />
                         </div>
                     </div>

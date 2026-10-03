@@ -229,6 +229,16 @@ try {
             });
             if (!baseline) {
                 await checkHeader(1);
+                await page.mouse.move(0, 0);
+                const searchStyle = await page.getByRole('searchbox', { name: 'Find a vault' }).evaluate(el => {
+                    const style = getComputedStyle(el);
+                    return { background: style.backgroundColor, border: style.borderColor };
+                });
+                const importStyle = await page.getByRole('button', { name: 'Import', exact: true }).evaluate(el => {
+                    const style = getComputedStyle(el);
+                    return { background: style.backgroundColor, border: style.borderColor };
+                });
+                assert.deepEqual(searchStyle, importStyle, `${name}/${theme}: search must match the Import button colours`);
                 assert.equal(
                     await page.locator('[aria-labelledby="recent-title"]').isVisible(),
                     width >= 640,
